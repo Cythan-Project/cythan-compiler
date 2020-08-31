@@ -1,10 +1,11 @@
 
 use super::stage3::Stage3Token;
+use super::stage1::Number;
 use std::collections::HashMap;
 
 pub struct Context {
     functions: HashMap<String,Vec<Stage3Token>>,
-    variables: HashMap<String,Vec<u32>>
+    variables: HashMap<String,Vec<Number>>
 }
 
 impl Context {
@@ -16,10 +17,10 @@ impl Context {
         }
     }
     
-    pub fn execute(&mut self, token: &Stage3Token, function_data: &Vec<u32>) -> Vec<u32> {
+    pub fn execute(&mut self, token: &Stage3Token, function_data: &Vec<Number>) -> Vec<Number> {
         match token {
             Stage3Token::Value(e) => {
-                vec![*e]
+                vec![e.clone()]
             },
             Stage3Token::FunctionCreation(name,code) => {
                 self.functions.insert(name.to_owned(),code.clone());
@@ -58,7 +59,16 @@ impl Context {
 
     pub fn compute(&mut self, tokens: &Vec<Stage3Token>) -> Vec<u32> {
         let p = &Vec::new();
-        tokens.iter().map(|x| self.execute(x, &p)).flatten().collect()
+        tokens.iter().map(|x| self.execute(x, &p)).flatten().enumerate().map(|(i,x)| {
+            match x {
+                Number::Absolute(e) => {
+                    e
+                },
+                Number::Relative(e) => {
+                    (i as i64 + e as i64) as u32
+                }
+            }
+        }).collect()
     }
 }
 /*
@@ -73,9 +83,9 @@ self.3.. // Will get values between 3 and the end of the arguments
 self will get everything
 */
 
-fn pattern_to_value(function_args: &Vec<u32>,pattern: &str) -> Vec<u32> {
-    if pattern.contains("?") {
-        let mut iter = pattern.split("?");
+fn pattern_to_value(function_args: &Vec<Number>,pattern: &str) -> Vec<Number> {
+    if pattern.contains('?') {
+        let mut iter = pattern.split('?');
         let before = iter.next().expect("A `self.x?` expression must have a number `x` before the `?`");
         if before.is_empty() {
             panic!("A `self.x?` expression must have a number `x` before the `?`");
@@ -104,7 +114,7 @@ fn pattern_to_value(function_args: &Vec<u32>,pattern: &str) -> Vec<u32> {
         let replace_with = iter.next().map(|x| x.parse::<u32>().unwrap_or(0)).unwrap_or(0);
 
         (start..end).map(|x| {
-            *function_args.get(x as usize).unwrap_or(&replace_with)
+            function_args.get(x as usize).unwrap_or(&Number::Absolute(replace_with)).clone()
         }).collect()
     } else {
         let (start,end) = if pattern.contains("..") {
@@ -129,13 +139,13 @@ fn pattern_to_value(function_args: &Vec<u32>,pattern: &str) -> Vec<u32> {
         };
 
         (start..end).flat_map(|x| {
-            function_args.get(x as usize).map(|x| *x)
+            function_args.get(x as usize).map(|x| x.clone())
         }).collect()
     }
 }
 
-fn execute_function(function_code: &Vec<Stage3Token>,arguments: &Vec<Stage3Token>, context: &mut Context, function_data: &Vec<u32>) -> Vec<u32> {
-    let args: Vec<u32> = arguments.iter().map(|y| context.execute(y,function_data)).flatten().collect();
+fn execute_function(function_code: &Vec<Stage3Token>,arguments: &Vec<Stage3Token>, context: &mut Context, function_data: &Vec<Number>) -> Vec<Number> {
+    let args: Vec<Number> = arguments.iter().map(|y| context.execute(y,function_data)).flatten().collect();
     let o = function_code.iter().map(|x| {
         context.execute(x,&args)
     }).flatten().collect();

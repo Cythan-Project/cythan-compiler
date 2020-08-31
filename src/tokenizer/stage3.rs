@@ -1,7 +1,9 @@
 
+use super::stage1::Number;
+
 #[derive(Debug, Clone)]
 pub enum Stage3Token {
-    Value(u32),
+    Value(Number),
     Variable(String),
     FunctionExecution(String,Vec<Stage3Token>),
     FunctionCreation(String,Vec<Stage3Token>),
@@ -73,7 +75,7 @@ pub fn compile(expr: &Vec<Stage2Token>) -> Vec<Stage3Token> {
                     litteral = String::new();
                     was_litteral = false;
                 }
-                output.push(Stage3Token::Value(*e));
+                output.push(Stage3Token::Value(e.clone()));
             },
             _ => {
                 if was_litteral {

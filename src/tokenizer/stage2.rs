@@ -7,11 +7,13 @@ pub enum Stage2Token<'a> {
     Parenthesis(Vec<Stage2Token<'a>>),
     KeywordUse,
     KeywordFn,
-    Number(u32),
+    Number(Number),
     Literal(Cow<'a, str>),
     Assignement(Cow<'a, str>)
     
 }
+
+use super::stage1::Number;
 
 use super::stage1::Stage1Token;
 
@@ -51,7 +53,7 @@ pub fn compile<'a>(token: &Vec<&Stage1Token<'a>>) -> Vec<Stage2Token<'a>> {
             },
             Stage1Token::Number(e) => {
                 if in_p == 0 && in_b == 0 {
-                    v.push(Stage2Token::Number(*e));
+                    v.push(Stage2Token::Number(e.clone()));
                 } else {
                     p.push(*i);
                 }

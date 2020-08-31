@@ -23,7 +23,7 @@ fn test() {
     b = (4 a)
     
     test_func {
-        1 3 9 6 8 9 self.0 self.0..12?1 self.1?6 b
+        1 3 9 6 8 9 ~-1 self.0 self.0..12?1 self.1?6 b
     }
     
     test_func(23)
