@@ -14,7 +14,7 @@ use super::errors::Errors;
 use super::stage1::Stage1Token;
 
 #[inline]
-pub fn compile<'a>(token: &Vec<&Stage1Token<'a>>) -> Result<Vec<Stage2Token<'a>>, Errors> {
+pub fn compile<'a>(token: &[&Stage1Token<'a>]) -> Result<Vec<Stage2Token<'a>>, Errors> {
     let mut v = Vec::new();
 
     let mut in_p = 0;

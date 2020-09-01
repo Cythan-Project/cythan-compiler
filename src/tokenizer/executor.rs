@@ -11,18 +11,20 @@ pub struct Context {
     variables: HashMap<String, Vec<Number>>,
 }
 
-impl Context {
-    pub fn new() -> Self {
+impl Default for Context {
+    fn default() -> Self {
         Self {
             functions: HashMap::new(),
             variables: HashMap::new(),
         }
     }
+}
 
+impl Context {
     pub fn execute(
         &mut self,
         token: &Stage3Token,
-        function_data: &Vec<Number>,
+        function_data: &[Number],
         current_int: &mut u64,
     ) -> CompilerResult {
         match token {
@@ -45,7 +47,7 @@ impl Context {
             }
             Stage3Token::VariableDefinition(name, value) => {
                 let result = value
-                    .into_iter()
+                    .iter()
                     .map(|x| self.execute(x, function_data, current_int))
                     .collect::<Result<Vec<Vec<Number>>, Errors>>()?;
                 self.variables
@@ -56,7 +58,7 @@ impl Context {
         }
     }
 
-    pub fn compute(&mut self, tokens: &Vec<Stage3Token>) -> Result<Vec<u32>, Errors> {
+    pub fn compute(&mut self, tokens: &[Stage3Token]) -> Result<Vec<u32>, Errors> {
         let p = &Vec::new();
         let mut integer = 0u64;
         let mut labels = HashMap::new();
@@ -77,29 +79,28 @@ impl Context {
 fn get_value(
     literal: &str,
     variables: &HashMap<String, Vec<Number>>,
-    function_args: &Vec<Number>,
+    function_args: &[Number],
 ) -> CompilerResult {
-    if literal.contains(":")
-        && literal.starts_with("'")
-        && !literal.contains("+")
-        && !literal.contains("-")
+    if literal.contains(':')
+        && literal.starts_with('\'')
+        && !literal.contains('+')
+        && !literal.contains('-')
     {
         if let Ok(e) = literal.parse::<Number>() {
             Ok(vec![e])
         } else {
-            let mut iter = literal.split(":");
+            let mut iter = literal.split(':');
             let label = iter.next().unwrap();
             let label = label[1..label.len()].to_owned();
             let variable = iter.next().unwrap();
-            if let Some(e) = get_var(function_args, variable, variables)? {
+            if let Some(mut e) = get_var(function_args, variable, variables)? {
                 if e.is_empty() {
                     Err(Errors::EmptyVariable {
                         varname: variable.to_owned(),
                     })
                 } else {
-                    let mut i = e.clone();
-                    i[0] = i[0].labelize(label);
-                    Ok(i)
+                    e[0] = e[0].labelize(label);
+                    Ok(e)
                 }
             } else {
                 Err(Errors::UndefinedVariable {
@@ -107,15 +108,15 @@ fn get_value(
                 })
             }
         }
-    } else if !literal.contains(":")
-        && !literal.starts_with("'")
-        && !literal.contains("+")
-        && !literal.contains("-")
+    } else if !literal.contains(':')
+        && !literal.starts_with('\'')
+        && !literal.contains('+')
+        && !literal.contains('-')
     {
         if let Ok(e) = literal.parse::<Number>() {
             Ok(vec![e])
         } else if let Some(e) = get_var(function_args, literal, variables)? {
-            Ok(e.clone())
+            Ok(e)
         } else {
             Err(Errors::VariableNotFound {
                 variable_name: literal.to_owned(),
@@ -136,7 +137,7 @@ fn rename_labels(code: Vec<Number>, current_int: &mut u64) -> Vec<Number> {
     code.into_iter()
         .map(|mut x| {
             match &mut x {
-                Number::Add(a, b) => try_rename_inner_number(a, current_int, &mut labels),
+                Number::Add(a, _) => try_rename_inner_number(a, current_int, &mut labels),
                 Number::Plain(a) => try_rename_inner_number(a, current_int, &mut labels),
                 Number::PointerDefine(a, b) => {
                     try_rename_string(a, current_int, &mut labels);
@@ -157,7 +158,7 @@ fn try_rename_string(
     current_int: &mut u64,
     labels: &mut HashMap<String, String>,
 ) {
-    if reference.starts_with("#") {
+    if reference.starts_with('#') {
         return;
     }
     if let Some(e) = labels.get(reference) {
@@ -175,39 +176,25 @@ fn try_rename_inner_number(
     current_int: &mut u64,
     labels: &mut HashMap<String, String>,
 ) {
-    match inner_number {
-        InnerNumber::PointerReference(reference) => {
-            try_rename_string(reference, current_int, labels)
-        }
-        _ => (),
+    if let InnerNumber::PointerReference(reference) = inner_number {
+        try_rename_string(reference, current_int, labels)
     }
 }
-/*
-self.0 // Will get the value of 0 only if the value exists
-self.0? // Will try to get value 0 or if the value don't exists will replace it by 0
-self.0?5 // Will try to get value 0 or if the value don't exists will replace it by 5
-self.0..40 // Will get values between 0 and 40 if one don't exists will not replace inexisting values
-self.0..40? // Will get values between 0 and 40 if one don't exists it will be replace by a 0
-self.0..40?6 // Will get values between 0 and 40 if one don't exists it will be replace by a 6
-self.3.. // Will get values between 3 and the end of the arguments
-
-self will get everything
-*/
 
 fn get_var(
-    function_args: &Vec<Number>,
+    function_args: &[Number],
     pattern: &str,
     map: &HashMap<String, Vec<Number>>,
 ) -> Result<Option<Vec<Number>>, Errors> {
     if pattern == "self" {
-        Ok(Some(function_args.clone()))
+        Ok(Some(function_args.to_vec()))
     } else if pattern.starts_with("self.") {
         Ok(Some(pattern_to_value(
             function_args,
             &pattern.replace("self.", ""),
         )?))
     } else {
-        Ok(map.get(pattern).map(|x| x.clone()))
+        Ok(map.get(pattern).cloned())
     }
 }
 
@@ -221,7 +208,7 @@ macro_rules! expect_r {
     };
 }
 
-fn pattern_to_value(function_args: &Vec<Number>, pattern: &str) -> CompilerResult {
+fn pattern_to_value(function_args: &[Number], pattern: &str) -> CompilerResult {
     if pattern.contains('?') {
         let mut iter = pattern.split('?');
         let before = if let Some(e) = iter.next() {
@@ -325,16 +312,16 @@ fn pattern_to_value(function_args: &Vec<Number>, pattern: &str) -> CompilerResul
         };
 
         Ok((start..end)
-            .flat_map(|x| function_args.get(x as usize).map(|x| x.clone()))
+            .flat_map(|x| function_args.get(x as usize).cloned())
             .collect())
     }
 }
 
 fn execute_function(
-    function_code: &Vec<Stage3Token>,
-    arguments: &Vec<Stage3Token>,
+    function_code: &[Stage3Token],
+    arguments: &[Stage3Token],
     context: &mut Context,
-    function_data: &Vec<Number>,
+    function_data: &[Number],
     integer: &mut u64,
 ) -> CompilerResult {
     let args: Vec<Number> = arguments

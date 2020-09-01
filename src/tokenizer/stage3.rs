@@ -11,7 +11,7 @@ use super::stage2::Stage2Token;
 use super::errors::Errors;
 
 #[inline]
-pub fn compile(expr: &Vec<Stage2Token>) -> Result<Vec<Stage3Token>, Errors> {
+pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Stage3Token>, Errors> {
     let mut output: Vec<Stage3Token> = Vec::new();
 
     let mut was_litteral = false;
@@ -38,7 +38,7 @@ pub fn compile(expr: &Vec<Stage2Token>) -> Result<Vec<Stage3Token>, Errors> {
             Stage2Token::Block(e) => {
                 if was_assignement {
                     return Err(Errors::BlockAfterAssignement {
-                        assignement: litteral.to_owned(),
+                        assignement: litteral,
                     });
                 }
                 if was_litteral {
@@ -111,7 +111,7 @@ impl Stage3Token {
                         .flatten()
                         .map(|x| format!("    {}", x)),
                 );
-                v.push(format!("}}"));
+                v.push("}}".to_owned());
                 v.push(String::new());
                 v
             }

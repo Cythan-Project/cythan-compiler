@@ -1,9 +1,5 @@
-
-19
-0
-0
-0
-0
+19 # start after data
+0 0 0 0 # use for if ==1, ==2, ==3, ==4
 '#0:0
 '#1:1
 '#2:2
@@ -18,240 +14,148 @@
 '#d7:0
 '#d8:0
 '#d9:0
-nullOp = (0 0)
+nullOp = (1 1)
+freeze = (0 0)
 eraseable = (999)
-nullOp
-nullOp
-nullOp
-nullOp
-nullOp
-nullOp
 
-jump {
-    ~+2
-    0
-    self.0
+nullOp nullOp nullOp nullOp nullOp nullOp
+
+jump {~+2 0 self.0}
+
+ifBin { # <input jumpA jumpB>
+    '#0 1
+    self.0?0 ~+3
+    self.1 1
+    999 0
+    ~+2 0 self.2
 }
 
-ifBin {
-    '#0
-    1
-    self.0?0
-    ~+3
-    self.1
-    1
-    999
-    0
-    ~+2
-    0
-    self.2
-}
 
 add4b {
-    jump(~+26)
+    
+    jump(~+26) # jump over data
+    # ----------------------------- data (25) -------------------------
     'add4b_retenue:0
     'add4b_actA:~+4
     'add4b_A1:~+4
     'add4b_A2:~+4
     'add4b_A3:~+4
-    'add4b_inputA:self.0..4?0
+    'add4b_inputA:self.0..4?0 # (4 data)
     'add4b_actB:~+4
     'add4b_B1:~+4
     'add4b_B2:~+4
     'add4b_B3:~+4
-    'add4b_inputB:self.4..8?0
+    'add4b_inputB:self.4..8?0 # (4 data)
     'add4b_actO:~+4
     'add4b_O1:~+4
     'add4b_O2:~+4
     'add4b_O3:~+4
-    '#add4b_output:0
-    0
-    0
-    0
-    'add4b_inputA
-    '#d0
-    'add4b_inputA+1
-    '#d1
-    'add4b_inputA+2
-    '#d2
-    'add4b_inputA+3
-    '#d3
+    '#add4b_output:0 0 0 0 # (4 data)
+    
+    # -------------------------------- Start ----------------------
+
+    # copy to data
+    'add4b_inputA '#d0
+    'add4b_inputA+1 '#d1
+    'add4b_inputA+2 '#d2
+    'add4b_inputA+3 '#d3
+
+    # start loop
     'add4b_start:nullOp
-    '#d0
-    'add4b_inputA
-    '#d1
-    'add4b_inputA+1
-    '#d2
-    'add4b_inputA+2
-    '#d3
-    'add4b_inputA+3
+
+    # restore A from test from data
+    '#d0 'add4b_inputA
+    '#d1 'add4b_inputA+1
+    '#d2 'add4b_inputA+2
+    '#d3 'add4b_inputA+3
+
+
+    # --------------------------- test -------------------------------------
+
+    # jump over all
     jump(~+115)
-    'add4b_r__00:'#0
-    'add4b_retenue
-    'add4b_actO
-    ~+2
-    '#0
-    eraseable
-    jump(~+7)
-    'add4b_r__01:'#0
-    'add4b_retenue
-    'add4b_actO
-    ~+2
-    '#1
-    eraseable
-    jump(~+7)
-    'add4b_r__10:'#1
-    'add4b_retenue
-    'add4b_actO
-    ~+2
-    '#0
-    eraseable
-    jump(~+7)
-    'add4b_r__11:'#1
-    'add4b_retenue
-    'add4b_actO
-    ~+2
-    '#1
-    eraseable
-    jump(~+48)
-    'add4b_R1_A1:'add4b_actA
-    ~+1
-    eraseable
-    ~+3
-    'add4b_r__11
-    1
-    eraseable
-    0
-    ~+2
-    0
-    'add4b_r__10
-    'add4b_R1_A0:'add4b_actA
-    ~+1
-    eraseable
-    ~+3
-    'add4b_r__10
-    1
-    eraseable
-    0
-    ~+2
-    0
-    'add4b_r__01
-    'add4b_R0_A1:'add4b_actA
-    ~+1
-    eraseable
-    ~+3
-    'add4b_r__10
-    1
-    eraseable
-    0
-    ~+2
-    0
-    'add4b_r__01
-    'add4b_R0_A0:'add4b_actA
-    ~+1
-    eraseable
-    ~+3
-    'add4b_r__01
-    1
-    eraseable
-    0
-    ~+2
-    0
-    'add4b_r__00
-    jump(~+33)
-    'add4b_R1:'add4b_actA
-    ~+1
-    eraseable
-    ~+3
-    'add4b_R1_A1
-    1
-    eraseable
-    0
-    ~+2
-    0
-    'add4b_R1_A0
-    'add4b_R0:'add4b_actA
-    ~+1
-    eraseable
-    ~+3
-    'add4b_R0_A1
-    1
-    eraseable
-    0
-    ~+2
-    0
-    'add4b_R0_A0
-    'add4b_retenue
-    ~+3
-    'add4b_R1
-    1
-    eraseable
-    0
-    ~+2
-    0
-    'add4b_R0
+
+    # ----- result test  ---- [7*4 + 3*3 = 37]
+    
+    'add4b_r__00:'#0 'add4b_retenue 'add4b_actO ~+2 '#0 eraseable # 11
+    jump(~+7) # 3
+    'add4b_r__01:'#0 'add4b_retenue 'add4b_actO ~+2 '#1 eraseable # 11
+    jump(~+7) # 3
+    'add4b_r__10:'#1 'add4b_retenue 'add4b_actO ~+2 '#0 eraseable # 11
+    jump(~+7) # 3
+    'add4b_r__11:'#1 'add4b_retenue 'add4b_actO ~+2 '#1 eraseable # 11
+
+    # jump over ifs end  ---- [12*4 + 3 = 51]
+    jump(~+48) # 3
+
+    'add4b_R1_A1:'add4b_actA ~+1 eraseable ~+3 'add4b_r__11 1 eraseable 0 ~+2 0 'add4b_r__10 # 11
+    'add4b_R1_A0:'add4b_actA ~+1 eraseable ~+3 'add4b_r__10 1 eraseable 0 ~+2 0 'add4b_r__01 # 11
+    'add4b_R0_A1:'add4b_actA ~+1 eraseable ~+3 'add4b_r__10 1 eraseable 0 ~+2 0 'add4b_r__01 # 11
+    'add4b_R0_A0:'add4b_actA ~+1 eraseable ~+3 'add4b_r__01 1 eraseable 0 ~+2 0 'add4b_r__00 # 11
+
+    # jump over ifs end  ---- [12*2 + 3 = 27]
+    jump(~+33) # 3, j'ai ajouté 9 car on ne veux pas pas commencer le if mais le finir.
+    'add4b_R1:'add4b_actA ~+1 eraseable ~+3 'add4b_R1_A1 1 eraseable 0 ~+2 0 'add4b_R1_A0 # 11
+    'add4b_R0:'add4b_actA ~+1 eraseable ~+3 'add4b_R0_A1 1 eraseable 0 ~+2 0 'add4b_R0_A0 # 11
+
+    # start test and go back up 
+    'add4b_retenue ~+3 'add4b_R1 1 eraseable 0 ~+2 0 'add4b_R0 # 9
+
     nullOp
-    'add4b_B1
-    'add4b_actB
-    'add4b_B2
-    'add4b_B1
-    'add4b_B3
-    'add4b_B2
-    'add4b_A1
-    'add4b_actA
-    'add4b_A2
-    'add4b_A1
-    'add4b_A3
-    'add4b_A2
-    '#1
-    'add4b_A3
-    'add4b_O1
-    'add4b_actO
-    'add4b_O2
-    'add4b_O1
-    'add4b_O3
-    'add4b_O2
-    'add4b_inputA
-    '#d0
-    'add4b_inputA+1
-    '#d1
-    'add4b_inputA+2
-    '#d2
-    'add4b_inputA+3
-    '#d3
-    'add4b_start
-    'add4b_inputA
-    'add4b_start
-    'add4b_inputA+1
-    'add4b_start
-    'add4b_inputA+2
-    'add4b_start
-    'add4b_inputA+3
-    '#0
-    1
-    ~+6
-    1
-    'add4b_actA
-    ~+1
-    eraseable
-    0
-    '#d0
-    'add4b_inputA
-    '#d1
-    'add4b_inputA+1
-    '#d2
-    'add4b_inputA+2
-    '#d3
-    'add4b_inputA+3
+
+    # ------------------------------ Next Gen ------------------------
+
+    #  ---------- shift
+
+    # shift B
+    'add4b_B1 'add4b_actB
+    'add4b_B2 'add4b_B1
+    'add4b_B3 'add4b_B2
+
+    # shift A
+    'add4b_A1 'add4b_actA
+    'add4b_A2 'add4b_A1
+    'add4b_A3 'add4b_A2
+    '#1 'add4b_A3 # for end detection
+
+    # shift O
+    'add4b_O1 'add4b_actO
+    'add4b_O2 'add4b_O1
+    'add4b_O3 'add4b_O2
+
+
+    # ---------- Finish
+
+    # save state
+    'add4b_inputA '#d0
+    'add4b_inputA+1 '#d1
+    'add4b_inputA+2 '#d2
+    'add4b_inputA+3 '#d3
+
+    # set if
+    'add4b_start 'add4b_inputA
+    'add4b_start 'add4b_inputA+1
+    'add4b_start 'add4b_inputA+2
+    'add4b_start 'add4b_inputA+3
+    '#0 1
+
+    # test (jump to start if wrong)
+    ~+4 1
+    'add4b_actA 0
+    
+    # ---------------------------- End ----------------------------
+
+    # restore A
+    '#d0 'add4b_inputA
+    '#d1 'add4b_inputA+1
+    '#d2 'add4b_inputA+2
+    '#d3 'add4b_inputA+3
+
+    # return
 }
-add4b(
-    0
-    1
-    0
-    1
-    1
-    0
-    1
-    0
-)
-jump(~-2)
+
+
+
+add4b(0 1 0 1 1 0 1 0)
+freeze
+

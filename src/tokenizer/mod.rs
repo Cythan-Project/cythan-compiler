@@ -16,7 +16,7 @@ pub fn generate_tokens(string: &str) -> Result<Vec<stage3::Stage3Token>, Errors>
             .flatten()
             .collect::<Vec<stage1::Stage1Token>>()
             .iter()
-            .collect(),
+            .collect::<Vec<_>>(),
     )?)?)
 }
 
@@ -28,6 +28,6 @@ pub fn generate_tokens_stage2(string: &str) -> Result<Vec<stage2::Stage2Token>, 
             .flatten()
             .collect::<Vec<stage1::Stage1Token>>()
             .iter()
-            .collect(),
+            .collect::<Vec<_>>(),
     )
 }

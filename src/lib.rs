@@ -7,9 +7,10 @@ pub use tokenizer::errors::Errors;
 #[test]
 fn test() {
     let tokens =
-        tokenizer::generate_tokens(&std::fs::read_to_string("cythan-in.ct").unwrap()).unwrap();
+        tokenizer::generate_tokens(&std::fs::read_to_string("cythan-in/cythan.ct").unwrap())
+            .unwrap();
     std::fs::write(
-        "cythan-clean.ct",
+        "cythan-in/cythan-clean.ct",
         tokens
             .iter()
             .map(|x| x.to_string())
@@ -21,7 +22,7 @@ fn test() {
 
     //println!("{:?}", &tokens);
 
-    println!("{:?}", &tokenizer::Context::new().compute(&tokens));
+    println!("{:?}", &tokenizer::Context::default().compute(&tokens));
 
     //assert_eq!(tokens.get(0).unwrap().term(), "hello");
 }

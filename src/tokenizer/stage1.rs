@@ -67,13 +67,13 @@ pub enum Number {
 }
 
 fn text_to_added_number(s: &str) -> Option<(InnerNumber, isize)> {
-    if s.contains("+") {
+    if s.contains('+') {
         let mut iter = s.split('+');
         Some((
             iter.next().unwrap().parse().ok()?,
             iter.next().map(|x| x.parse::<isize>().ok()).flatten()?,
         ))
-    } else if s.contains("-") {
+    } else if s.contains('-') {
         let mut iter = s.split('-');
         Some((
             iter.next().unwrap().parse().ok()?,
@@ -88,7 +88,7 @@ impl std::str::FromStr for Number {
     type Err = &'static str;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        if value.starts_with("'") && value.contains(":") {
+        if value.starts_with('\'') && value.contains(':') {
             // Pointer Define or Pointer and add
 
             let mut iter = value.split(':');
@@ -98,7 +98,7 @@ impl std::str::FromStr for Number {
 
             let text = iter.next().unwrap();
 
-            if value.contains("+") || value.contains("-") {
+            if value.contains('+') || value.contains('-') {
                 if let Some((e, e2)) = text_to_added_number(text) {
                     Ok(Number::PointerDefineAndAdd(name, e, e2))
                 } else {
@@ -107,7 +107,7 @@ impl std::str::FromStr for Number {
             } else {
                 Ok(Number::PointerDefine(name, text.parse::<InnerNumber>()?))
             }
-        } else if value.contains("+") || value.contains("-") {
+        } else if value.contains('+') || value.contains('-') {
             if let Some((e, e2)) = text_to_added_number(value) {
                 Ok(Number::Add(e, e2))
             } else {
@@ -130,7 +130,7 @@ impl std::str::FromStr for InnerNumber {
     type Err = &'static str;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        if value.starts_with("'") {
+        if value.starts_with('\'') {
             Ok(InnerNumber::PointerReference(
                 value[1..value.len()].to_owned(),
             ))
@@ -139,7 +139,7 @@ impl std::str::FromStr for InnerNumber {
         } else {
             value
                 .parse::<usize>()
-                .map(|x| InnerNumber::Number(x))
+                .map(InnerNumber::Number)
                 .map_err(|_| "Invalid number")
         }
     }
