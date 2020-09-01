@@ -4,15 +4,17 @@ use std::borrow::Cow;
 pub enum Stage2Token<'a> {
     Block(Vec<Stage2Token<'a>>),
     Parenthesis(Vec<Stage2Token<'a>>),
-    KeywordFn,
+    //KeywordFn,
     Literal(Cow<'a, str>),
     Assignement(Cow<'a, str>),
 }
 
+use super::errors::Errors;
+
 use super::stage1::Stage1Token;
 
 #[inline]
-pub fn compile<'a>(token: &Vec<&Stage1Token<'a>>) -> Vec<Stage2Token<'a>> {
+pub fn compile<'a>(token: &Vec<&Stage1Token<'a>>) -> Result<Vec<Stage2Token<'a>>, Errors> {
     let mut v = Vec::new();
 
     let mut in_p = 0;
@@ -36,7 +38,7 @@ pub fn compile<'a>(token: &Vec<&Stage1Token<'a>>) -> Vec<Stage2Token<'a>> {
                 if in_b == 0 {
                     in_p -= 1;
                     if in_p == 0 {
-                        v.push(Stage2Token::Parenthesis(compile(&p)));
+                        v.push(Stage2Token::Parenthesis(compile(&p)?));
                         p = Vec::new();
                     } else {
                         p.push(*i);
@@ -55,13 +57,13 @@ pub fn compile<'a>(token: &Vec<&Stage1Token<'a>>) -> Vec<Stage2Token<'a>> {
                     p.push(*i);
                 }
             }
-            Stage1Token::KeywordFn => {
+            /*Stage1Token::KeywordFn => {
                 if in_p == 0 && in_b == 0 {
                     v.push(Stage2Token::KeywordFn);
                 } else {
                     p.push(*i);
                 }
-            }
+            }*/
             Stage1Token::OpenBrackets => {
                 if in_p == 0 {
                     in_b += 1;
@@ -76,7 +78,7 @@ pub fn compile<'a>(token: &Vec<&Stage1Token<'a>>) -> Vec<Stage2Token<'a>> {
                 if in_p == 0 {
                     in_b -= 1;
                     if in_b == 0 {
-                        v.push(Stage2Token::Block(compile(&p)));
+                        v.push(Stage2Token::Block(compile(&p)?));
                         p = Vec::new();
                     } else {
                         p.push(*i);
@@ -91,10 +93,7 @@ pub fn compile<'a>(token: &Vec<&Stage1Token<'a>>) -> Vec<Stage2Token<'a>> {
                     if let Some(Stage2Token::Literal(e)) = tmp {
                         v.push(Stage2Token::Assignement(e));
                     } else {
-                        println!("a `=` must be followed by a litteral");
-                        println!("Example:");
-                        println!(" var2 = (0 20 var1)");
-                        println!("Please add a name for the variable or remove the =");
+                        return Err(Errors::EqualNotPrecededByLitteral);
                     }
                 } else {
                     p.push(*i);
@@ -102,5 +101,5 @@ pub fn compile<'a>(token: &Vec<&Stage1Token<'a>>) -> Vec<Stage2Token<'a>> {
             }
         }
     }
-    v
+    Ok(v)
 }

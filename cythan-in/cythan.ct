@@ -1,19 +1,257 @@
-0 12 2 3
 
-# This is an example
+19
+0
+0
+0
+0
+'#0:0
+'#1:1
+'#2:2
+'#3:3
+'#d0:0
+'#d1:0
+'#d2:0
+'#d3:0
+'#d4:0
+'#d5:0
+'#d6:0
+'#d7:0
+'#d8:0
+'#d9:0
+nullOp = (0 0)
+eraseable = (999)
+nullOp
+nullOp
+nullOp
+nullOp
+nullOp
+nullOp
 
-3 # Test
-# Test of a multi line comment!
-# de
-
-a = (2 10)
-
-b = (4 a)
-
-test_func {
-    1 3 9 6 8 9 self.0 self.0..12?1 self.1?6 b
+jump {
+    ~+2
+    0
+    self.0
 }
 
-test_func(23)
+ifBin {
+    '#0
+    1
+    self.0?0
+    ~+3
+    self.1
+    1
+    999
+    0
+    ~+2
+    0
+    self.2
+}
 
-4 25 26 23 b
+add4b {
+    jump(~+26)
+    'add4b_retenue:0
+    'add4b_actA:~+4
+    'add4b_A1:~+4
+    'add4b_A2:~+4
+    'add4b_A3:~+4
+    'add4b_inputA:self.0..4?0
+    'add4b_actB:~+4
+    'add4b_B1:~+4
+    'add4b_B2:~+4
+    'add4b_B3:~+4
+    'add4b_inputB:self.4..8?0
+    'add4b_actO:~+4
+    'add4b_O1:~+4
+    'add4b_O2:~+4
+    'add4b_O3:~+4
+    '#add4b_output:0
+    0
+    0
+    0
+    'add4b_inputA
+    '#d0
+    'add4b_inputA+1
+    '#d1
+    'add4b_inputA+2
+    '#d2
+    'add4b_inputA+3
+    '#d3
+    'add4b_start:nullOp
+    '#d0
+    'add4b_inputA
+    '#d1
+    'add4b_inputA+1
+    '#d2
+    'add4b_inputA+2
+    '#d3
+    'add4b_inputA+3
+    jump(~+115)
+    'add4b_r__00:'#0
+    'add4b_retenue
+    'add4b_actO
+    ~+2
+    '#0
+    eraseable
+    jump(~+7)
+    'add4b_r__01:'#0
+    'add4b_retenue
+    'add4b_actO
+    ~+2
+    '#1
+    eraseable
+    jump(~+7)
+    'add4b_r__10:'#1
+    'add4b_retenue
+    'add4b_actO
+    ~+2
+    '#0
+    eraseable
+    jump(~+7)
+    'add4b_r__11:'#1
+    'add4b_retenue
+    'add4b_actO
+    ~+2
+    '#1
+    eraseable
+    jump(~+48)
+    'add4b_R1_A1:'add4b_actA
+    ~+1
+    eraseable
+    ~+3
+    'add4b_r__11
+    1
+    eraseable
+    0
+    ~+2
+    0
+    'add4b_r__10
+    'add4b_R1_A0:'add4b_actA
+    ~+1
+    eraseable
+    ~+3
+    'add4b_r__10
+    1
+    eraseable
+    0
+    ~+2
+    0
+    'add4b_r__01
+    'add4b_R0_A1:'add4b_actA
+    ~+1
+    eraseable
+    ~+3
+    'add4b_r__10
+    1
+    eraseable
+    0
+    ~+2
+    0
+    'add4b_r__01
+    'add4b_R0_A0:'add4b_actA
+    ~+1
+    eraseable
+    ~+3
+    'add4b_r__01
+    1
+    eraseable
+    0
+    ~+2
+    0
+    'add4b_r__00
+    jump(~+33)
+    'add4b_R1:'add4b_actA
+    ~+1
+    eraseable
+    ~+3
+    'add4b_R1_A1
+    1
+    eraseable
+    0
+    ~+2
+    0
+    'add4b_R1_A0
+    'add4b_R0:'add4b_actA
+    ~+1
+    eraseable
+    ~+3
+    'add4b_R0_A1
+    1
+    eraseable
+    0
+    ~+2
+    0
+    'add4b_R0_A0
+    'add4b_retenue
+    ~+3
+    'add4b_R1
+    1
+    eraseable
+    0
+    ~+2
+    0
+    'add4b_R0
+    nullOp
+    'add4b_B1
+    'add4b_actB
+    'add4b_B2
+    'add4b_B1
+    'add4b_B3
+    'add4b_B2
+    'add4b_A1
+    'add4b_actA
+    'add4b_A2
+    'add4b_A1
+    'add4b_A3
+    'add4b_A2
+    '#1
+    'add4b_A3
+    'add4b_O1
+    'add4b_actO
+    'add4b_O2
+    'add4b_O1
+    'add4b_O3
+    'add4b_O2
+    'add4b_inputA
+    '#d0
+    'add4b_inputA+1
+    '#d1
+    'add4b_inputA+2
+    '#d2
+    'add4b_inputA+3
+    '#d3
+    'add4b_start
+    'add4b_inputA
+    'add4b_start
+    'add4b_inputA+1
+    'add4b_start
+    'add4b_inputA+2
+    'add4b_start
+    'add4b_inputA+3
+    '#0
+    1
+    ~+6
+    1
+    'add4b_actA
+    ~+1
+    eraseable
+    0
+    '#d0
+    'add4b_inputA
+    '#d1
+    'add4b_inputA+1
+    '#d2
+    'add4b_inputA+2
+    '#d3
+    'add4b_inputA+3
+}
+add4b(
+    0
+    1
+    0
+    1
+    1
+    0
+    1
+    0
+)
+jump(~-2)

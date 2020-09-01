@@ -16,7 +16,7 @@ impl filters::Filter for CythanV1 {
 #[derive(Debug, Clone)]
 pub enum Stage1Token<'a> {
     Literal(Cow<'a, str>),
-    KeywordFn,
+    //KeywordFn,
     OpenParenthesis,
     CloseParenthesis,
     OpenBrackets,
@@ -36,21 +36,24 @@ pub fn compile(line: &str) -> Vec<Stage1Token> {
         if t == "#" {
             break;
         }
-        out.push(if t == "fn" {
-            Stage1Token::KeywordFn
-        } else if t == "(" {
-            Stage1Token::OpenParenthesis
-        } else if t == ")" {
-            Stage1Token::CloseParenthesis
-        } else if t == "{" {
-            Stage1Token::OpenBrackets
-        } else if t == "}" {
-            Stage1Token::CloseBrackets
-        } else if t == "=" {
-            Stage1Token::Equals
-        } else {
-            Stage1Token::Literal(t)
-        });
+        out.push(
+            /*if t == "fn" {
+                Stage1Token::KeywordFn
+            } else */
+            if t == "(" {
+                Stage1Token::OpenParenthesis
+            } else if t == ")" {
+                Stage1Token::CloseParenthesis
+            } else if t == "{" {
+                Stage1Token::OpenBrackets
+            } else if t == "}" {
+                Stage1Token::CloseBrackets
+            } else if t == "=" {
+                Stage1Token::Equals
+            } else {
+                Stage1Token::Literal(t)
+            },
+        );
     }
     out
 }
@@ -142,6 +145,8 @@ impl std::str::FromStr for InnerNumber {
     }
 }
 
+use super::errors::Errors;
+
 impl Number {
     pub fn labelize(&self, label: String) -> Self {
         match self {
@@ -154,34 +159,40 @@ impl Number {
         }
     }
 
-    pub fn get_value(&self, current: usize, labels: &mut HashMap<String, u32>) -> u32 {
-        match self {
-            Self::Add(e, i) => (e.get_value(current, labels) as isize + i) as u32,
-            Self::Plain(e) => e.get_value(current, labels),
+    pub fn get_value(
+        &self,
+        current: usize,
+        labels: &mut HashMap<String, u32>,
+    ) -> Result<u32, Errors> {
+        Ok(match self {
+            Self::Add(e, i) => (e.get_value(current, labels)? as isize + i) as u32,
+            Self::Plain(e) => e.get_value(current, labels)?,
             Self::PointerDefine(name, e) => {
                 labels.insert(name.to_owned(), current as u32);
-                e.get_value(current, labels)
+                e.get_value(current, labels)?
             }
             Self::PointerDefineAndAdd(name, e, i) => {
                 labels.insert(name.to_owned(), current as u32);
-                (e.get_value(current, labels) as isize + i) as u32
+                (e.get_value(current, labels)? as isize + i) as u32
             }
-        }
+        })
     }
 }
 
 use std::collections::HashMap;
 
 impl InnerNumber {
-    pub fn get_value(&self, current: usize, labels: &HashMap<String, u32>) -> u32 {
+    pub fn get_value(&self, current: usize, labels: &HashMap<String, u32>) -> Result<u32, Errors> {
         match self {
-            Self::Current => current as u32,
-            Self::Number(e) => *e as u32,
+            Self::Current => Ok(current as u32),
+            Self::Number(e) => Ok(*e as u32),
             Self::PointerReference(e) => {
                 if let Some(e) = labels.get(e) {
-                    *e
+                    Ok(*e)
                 } else {
-                    panic!("Pointer {} not found", e);
+                    Err(Errors::LabelNotFound {
+                        label_name: e.to_owned(),
+                    })
                 }
             }
         }

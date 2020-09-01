@@ -8,8 +8,10 @@ pub enum Stage3Token {
 
 use super::stage2::Stage2Token;
 
+use super::errors::Errors;
+
 #[inline]
-pub fn compile(expr: &Vec<Stage2Token>) -> Vec<Stage3Token> {
+pub fn compile(expr: &Vec<Stage2Token>) -> Result<Vec<Stage3Token>, Errors> {
     let mut output: Vec<Stage3Token> = Vec::new();
 
     let mut was_litteral = false;
@@ -22,11 +24,10 @@ pub fn compile(expr: &Vec<Stage2Token>) -> Vec<Stage3Token> {
                     continue;
                 }
                 if was_assignement {
-                    println!("Can't place a literal after an assignement");
-                    println!(" HERE > {}", &litteral);
-                    println!("Have you forgot parenthesis ?");
-                    println!(" var1 = (10)");
-                    was_assignement = false;
+                    return Err(Errors::LiteralAfterAssignement {
+                        literal: e.clone().into_owned(),
+                        assignement: litteral,
+                    });
                 }
                 if was_litteral {
                     output.push(Stage3Token::Executable(litteral));
@@ -36,54 +37,37 @@ pub fn compile(expr: &Vec<Stage2Token>) -> Vec<Stage3Token> {
             }
             Stage2Token::Block(e) => {
                 if was_assignement {
-                    println!("Can't place a block after an assignement");
-                    println!(" HERE > {}", &litteral);
-                    println!("Have you forgot parenthesis ?");
-                    println!(" var1 = (10)");
-                    println!("Or added a = in your function definition");
-                    println!(" fn testfunc {{");
-                    println!("    10 20 10");
-                    println!(" }}");
-                    was_assignement = false;
+                    return Err(Errors::BlockAfterAssignement {
+                        assignement: litteral.to_owned(),
+                    });
                 }
                 if was_litteral {
-                    output.push(Stage3Token::FunctionCreation(litteral, compile(e)));
+                    output.push(Stage3Token::FunctionCreation(litteral, compile(e)?));
                     litteral = String::new();
                     was_litteral = false;
                 } else {
-                    println!("A code block must be preceded by a litteral.");
-                    println!("Example:");
-                    println!(" test {{");
-                    println!(" 0 5 6 self");
-                    println!(" }}");
-                    println!("Please add a litteral to create a function or remove the block");
+                    return Err(Errors::BlockMustBePrecededByLiteral);
                 }
             }
             Stage2Token::Parenthesis(e) => {
                 if was_litteral {
-                    output.push(Stage3Token::FunctionExecution(litteral, compile(e)));
+                    output.push(Stage3Token::FunctionExecution(litteral, compile(e)?));
                     litteral = String::new();
                     was_litteral = false;
                 } else if was_assignement {
-                    output.push(Stage3Token::VariableDefinition(litteral, compile(e)));
+                    output.push(Stage3Token::VariableDefinition(litteral, compile(e)?));
                     litteral = String::new();
                     was_assignement = false;
                 } else {
-                    println!("A code function call must be preceded by a function name or add a = to make an assignement.");
-                    println!("Example:");
-                    println!(" test(0 1 26 var1)");
-                    println!("Example:");
-                    println!(" var1 = (0 1 26 var2)");
-                    println!("Please add a litteral to make a function call, add a litteral and a `=` to make a variable assignement or remove both parenthesis");
+                    return Err(Errors::ParenthesisNotInAssignementOrFunctionCall);
                 }
             }
             Stage2Token::Assignement(e) => {
                 if was_assignement {
-                    println!("Can't place a assignement after an assignement");
-                    println!(" HERE > {}", &litteral);
-                    println!("Try to unwrap your statement");
-                    println!(" var1 = (10 13)");
-                    println!(" var2 = (10 13)");
+                    return Err(Errors::AssignementFollowedByAnotherAssignement {
+                        assignement1: litteral,
+                        assignement2: e.clone().into_owned(),
+                    });
                 }
                 if was_litteral {
                     output.push(Stage3Token::Executable(litteral));
@@ -91,25 +75,92 @@ pub fn compile(expr: &Vec<Stage2Token>) -> Vec<Stage3Token> {
                 }
                 was_assignement = true;
                 litteral = e.clone().into_owned();
-            }
-            _ => {
-                if was_litteral {
-                    output.push(Stage3Token::Executable(litteral));
-                    litteral = String::new();
-                    was_litteral = false;
-                } else if was_assignement {
-                    was_assignement = false;
-                    println!("Can't assign a variable to nothing");
-                    println!("HERE >  {}", litteral);
-                    println!("Example:");
-                    println!(" a = (0 12)");
-                    println!("Add parenthesis add a value between the parenthesis");
-                }
-            }
+            } /*_ => {
+                  if was_litteral {
+                      output.push(Stage3Token::Executable(litteral));
+                      litteral = String::new();
+                      was_litteral = false;
+                  } else if was_assignement {
+                      was_assignement = false;
+                      println!("Can't assign a variable to nothing");
+                      println!("HERE >  {}", litteral);
+                      println!("Example:");
+                      println!(" a = (0 12)");
+                      println!("Add parenthesis add a value between the parenthesis");
+                  }
+              }*/
         }
     }
     if was_litteral {
         output.push(Stage3Token::Executable(litteral));
     }
-    output
+    Ok(output)
+}
+
+impl Stage3Token {
+    pub fn to_string(&self) -> Vec<String> {
+        match self {
+            Self::Executable(e) => vec![e.to_owned()],
+            Self::FunctionCreation(e, c) => {
+                let mut v = Vec::new();
+                v.push(String::new());
+                v.push(format!("{} {{", e));
+                v.extend(
+                    c.iter()
+                        .map(|x| x.to_string())
+                        .flatten()
+                        .map(|x| format!("    {}", x)),
+                );
+                v.push(format!("}}"));
+                v.push(String::new());
+                v
+            }
+            Self::VariableDefinition(e, c) => {
+                if c.len() > 3 {
+                    let mut v = Vec::new();
+                    v.push(format!("{} = (", e));
+                    for x in c {
+                        for y in x.to_string() {
+                            v.push(format!("    {}", y.to_string()));
+                        }
+                    }
+                    v.push(")".to_owned());
+                    v
+                } else {
+                    vec![format!(
+                        "{} = ({})",
+                        e,
+                        c.iter()
+                            .map(|x| x.to_string())
+                            .flatten()
+                            .collect::<Vec<String>>()
+                            .join(" ")
+                    )]
+                }
+            }
+            Self::FunctionExecution(e, c) => {
+                if c.len() > 3 {
+                    let mut v = Vec::new();
+                    v.push(format!("{}(", e));
+                    for x in c {
+                        for y in x.to_string() {
+                            v.push(format!("    {}", y.to_string()));
+                        }
+                    }
+                    v.push(")".to_owned());
+                    v
+                } else {
+                    vec![format!(
+                        "{}({})",
+                        e,
+                        c.iter()
+                            .map(|x| x.to_string())
+                            .flatten()
+                            .collect::<Vec<String>>()
+                            .join(" ")
+                    )]
+                }
+            }
+        }
+    }
 }
