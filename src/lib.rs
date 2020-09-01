@@ -1,119 +1,103 @@
-#![feature(test)]
-
-extern crate test;
-
-use test::*;
-
 pub mod tokenizer;
 
 pub use tokenizer::*;
 
 #[test]
 fn test() {
-    let file = r#"0 12 2 3
-
-    # This is an example
+    let file = r#"'start 
+    0 0 0 0 0 
     
-    3 # Test
-    # Test of a multi line comment!
-    # de
-
-    a = (2 10)
-
-    b = (4 a)
+    nullOp = (0 0)
+    eraseable = (999)
+    'start:main()
     
-    test_func {
-        1 3 9 6 8 9 ~-1 self.0 self.0..12?1 self.1?6 b
+    
+    
+    
+    fn ifBin { # <input jumpA jumpB>
+        '0 1
+        self.0?0 ~+3
+        self.1?0 1
+        999 0
+        self.2?0 0
     }
     
-    test_func(23)
+    fn add4b_for {
+        # save inputs
+        'add4b_inputA 'd0
+        'add4b_inputA+1 'd1
+        'add4b_inputA+2 'd2
+        'add4b_inputA+3 'd3
     
-    4 25 26 23 b"#;
+        'add4b_start 'add4b_inputA
+        'add4b_start 'add4b_inputA+1
+        'add4b_start 'add4b_inputA+2
+        'add4b_start 'add4b_inputA+3
+        '0 1
+    
+    }
+    
+    fn add4b {
+        
+        'add4b_start:
+    
+    
+        'add4b_test:
+    
+        
+        ifBin(1,')
+        
+        
+    
+        'add4b_retenue:0
+        'add4b_actA:eraseable
+        'add4b_A1:~+4
+        'add4b_A2:~+4
+        'add4b_A3:~+4
+        'add4b_A4:~+4
+        'add4b_inputA:self.0..4?0
+        'add4b_actB:eraseable
+        'add4b_B1:~+4
+        'add4b_B2:~+4
+        'add4b_B3:~+4
+        'add4b_B4:~+4
+        'add4b_inputB:self.4..8?0
+        'add4b_actO:eraseable
+        'add4b_O1:~+4
+        'add4b_O2:~+4
+        'add4b_O3:~+4
+        'add4b_O4:~+4
+        'add4b_output:0 0 0 0
+        'add4b_out:nullOp # get out
+    }
+    
+    fn main {
+    
+    }
+    
+    
+    
+    
+    '0:0
+    '1:1
+    '2:2
+    '3:3
+    'd0:0
+    'd1:0
+    'd2:0
+    'd3:0
+    'd4:0
+    'd5:0
+    'd6:0
+    'd7:0
+    'd8:0
+    'd9:0"#;
 
     let tokens = tokenizer::generate_tokens(file);
 
-    println!("{:?}",tokens);
-    
-    println!("{:?}",&tokenizer::Context::new().compute(&tokens));
+    //println!("{:?}", &tokens);
+
+    println!("{:?}", &tokenizer::Context::new().compute(&tokens));
 
     //assert_eq!(tokens.get(0).unwrap().term(), "hello");
-}
-
-#[bench]
-fn bench_tokenize(bench: &mut Bencher) {
-    let file = r#"0 12 2 3
-
-    # This is an example
-    
-    3 # Test
-    # Test of a multi line comment!
-    # de
-
-    a = (2 10)
-
-    b = (4 a)
-    
-    test_func {
-        1 3 9 6 8 9 self.0 self.0..12?1 self.1?6 b
-    }
-    
-    test_func(23)
-    
-    4 25 26 23 b"#;
-    bench.iter(|| {
-        let a = tokenizer::generate_tokens(file);
-    })
-}
-
-#[bench]
-fn bench_compute(bench: &mut Bencher) {
-    let file = r#"0 12 2 3
-
-    # This is an example
-    
-    3 # Test
-    # Test of a multi line comment!
-    # de
-
-    a = (2 10)
-
-    b = (4 a)
-    
-    test_func {
-        1 3 9 6 8 9 self.0 self.0..12?1 self.1?6 b
-    }
-    
-    test_func(23)
-    
-    4 25 26 23 b"#;
-    let a = tokenizer::generate_tokens(file);
-    bench.iter(|| {
-        tokenizer::Context::new().compute(&a)
-    })
-}
-
-#[bench]
-fn bench_whole(bench: &mut Bencher) {
-    let file = r#"0 12 2 3
-
-    # This is an example
-    
-    3 # Test
-    # Test of a multi line comment!
-    # de
-
-    a = (2 10)
-
-    b = (4 a)
-    
-    test_func {
-        1 3 9 6 8 9 self.0 self.0..12?1 self.1?6 b
-    }
-    
-    test_func(23)
-    
-    4 25 26 23 b"#;
-    bench.iter(|| {
-        tokenizer::Context::new().compute(&tokenizer::generate_tokens(file))
-    })
 }
