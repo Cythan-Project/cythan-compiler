@@ -77,7 +77,8 @@ add4b {
     '#d2
     'add4b_inputA+3
     '#d3
-    'add4b_start:nullOp
+    'add4b_start:jump(~+2)
+    'add4b_startP:'add4b_start
     '#d0
     'add4b_inputA
     '#d1
@@ -220,19 +221,21 @@ add4b {
     '#d2
     'add4b_inputA+3
     '#d3
-    'add4b_start
+    'add4b_startP
     'add4b_inputA
-    'add4b_start
+    'add4b_startP
     'add4b_inputA+1
-    'add4b_start
+    'add4b_startP
     'add4b_inputA+2
-    'add4b_start
+    'add4b_startP
     'add4b_inputA+3
     '#0
     1
-    ~+4
+    ~+6
     1
     'add4b_actA
+    ~+1
+    eraseable
     0
     '#d0
     'add4b_inputA

@@ -166,49 +166,52 @@ impl Errors {
                 literal,
                 assignement,
             } => {
-                out.push_str("Can't place a literal after an assignement");
-                out.push_str("Have you forgotten parenthesis ?");
-                out.push_str("Try to replace this:");
-                out.push_str(&format!(" {} = {}", assignement, literal));
-                out.push_str("By this:");
-                out.push_str(&format!(" {} = ({})", assignement, literal));
+                out.push_str("Can't place a literal after an assignement\r\n");
+                out.push_str("Have you forgotten parenthesis ?\r\n");
+                out.push_str("Try to replace this:\r\n");
+                out.push_str(&format!(" {} = {}\r\n", assignement, literal));
+                out.push_str("By this:\r\n");
+                out.push_str(&format!(" {} = ({})\r\n", assignement, literal));
                 out.push_str("Or remove the `=`");
             }
             Errors::BlockAfterAssignement { assignement } => {
-                out.push_str("Can't place a block after an assignement");
-                out.push_str(&format!(" > {} = {{", &assignement));
-                out.push_str("Try removing the `=`:");
-                out.push_str(&format!(" {} {{", &assignement));
-                out.push_str("Block example:");
-                out.push_str("test {{");
-                out.push_str(" 0 5 6 self");
+                out.push_str("Can't place a block after an assignement\r\n");
+                out.push_str(&format!(" > {} = {{\r\n", &assignement));
+                out.push_str("Try removing the `=`:\r\n");
+                out.push_str(&format!(" {} {{\r\n", &assignement));
+                out.push_str("Block example:\r\n");
+                out.push_str("test {{\r\n");
+                out.push_str(" 0 5 6 self\r\n");
                 out.push_str("}}");
             }
             Errors::BlockMustBePrecededByLiteral {} => {
-                out.push_str("A block must have a name");
-                out.push_str("Please add a name to the block");
-                out.push_str("Block example:");
-                out.push_str("test {{");
-                out.push_str(" 0 5 6 self");
+                out.push_str("A block must have a name\r\n");
+                out.push_str("Please add a name to the block\r\n");
+                out.push_str("Block example:\r\n");
+                out.push_str("test {{\r\n");
+                out.push_str(" 0 5 6 self\r\n");
                 out.push_str("}}");
             }
             Errors::ParenthesisNotInAssignementOrFunctionCall {} => {
-                out.push_str("A code function call must be preceded by a function name or add a = to make an assignement.");
-                out.push_str("Example:");
-                out.push_str(" test(0 1 26 var1)");
-                out.push_str("Example:");
-                out.push_str(" var1 = (0 1 26 var2)");
+                out.push_str("A code function call must be preceded by a function name or add a = to make an assignement.\r\n");
+                out.push_str("Example:\r\n");
+                out.push_str(" test(0 1 26 var1)\r\n");
+                out.push_str("Example:\r\n");
+                out.push_str(" var1 = (0 1 26 var2)\r\n");
                 out.push_str("Please add a litteral to make a function call, add a litteral and a `=` to make a variable assignement or remove both parenthesis");
             }
             Errors::AssignementFollowedByAnotherAssignement {
                 assignement1,
                 assignement2,
             } => {
-                out.push_str("Can't place a assignement after an assignement");
-                out.push_str(&format!(" HERE > {} = {} =", &assignement1, &assignement2));
-                out.push_str("Try to unwrap your statement");
-                out.push_str(&format!(" {} = ...", assignement1));
-                out.push_str(&format!(" {} = ...", assignement2));
+                out.push_str("Can't place a assignement after an assignement\r\n");
+                out.push_str(&format!(
+                    " HERE > {} = {} =\r\n",
+                    &assignement1, &assignement2
+                ));
+                out.push_str("Try to unwrap your statement\r\n");
+                out.push_str(&format!(" {} = ...\r\n", assignement1));
+                out.push_str(&format!(" {} = ...\r\n", assignement2));
             }
         }
         out

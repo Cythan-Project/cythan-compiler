@@ -33,17 +33,34 @@ impl Context {
                 Ok(Vec::new())
             }
             Stage3Token::FunctionExecution(name, args) => {
-                let e = if let Some(e) = self.functions.get(name) {
+                let (fnname, label) = if name.starts_with("'") && name.contains(":") {
+                    let mut iter = name.split(":");
+                    let label = iter.next().unwrap();
+
+                    (
+                        iter.next().unwrap().to_owned(),
+                        Some(label[1..label.len()].to_owned()),
+                    )
+                } else {
+                    (name.to_owned(), None)
+                };
+                let e = if let Some(e) = self.functions.get(&fnname) {
                     e.clone()
                 } else {
                     return Err(Errors::FunctionNotFound {
-                        function_name: name.to_owned(),
+                        function_name: fnname,
                     });
                 };
-                Ok(rename_labels(
+                let mut out = rename_labels(
                     execute_function(&e, args, self, function_data, current_int)?,
                     current_int,
-                ))
+                );
+                if let Some(e) = label {
+                    if !out.is_empty() {
+                        out[0] = out[0].labelize(e);
+                    }
+                }
+                Ok(out)
             }
             Stage3Token::VariableDefinition(name, value) => {
                 let result = value

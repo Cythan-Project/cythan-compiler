@@ -61,7 +61,8 @@ add4b {
     'add4b_inputA+3 '#d3
 
     # start loop
-    'add4b_start:nullOp
+    'add4b_start:jump(~+2)
+    'add4b_startP:'add4b_start
 
     # restore A from test from data
     '#d0 'add4b_inputA
@@ -133,16 +134,21 @@ add4b {
     'add4b_inputA+3 '#d3
 
     # set if
-    'add4b_start 'add4b_inputA
-    'add4b_start 'add4b_inputA+1
-    'add4b_start 'add4b_inputA+2
-    'add4b_start 'add4b_inputA+3
+    'add4b_startP 'add4b_inputA
+    'add4b_startP 'add4b_inputA+1
+    'add4b_startP 'add4b_inputA+2
+    'add4b_startP 'add4b_inputA+3
     '#0 1
 
     # test (jump to start if wrong)
-    ~+4 1
-    'add4b_actA 0
+    ~+6 1
+    'add4b_actA ~+1
+    eraseable 0
     
+    # 'add4b_actA = 40 | 41 | 42 | 1
+    # 40:0 / 1
+    # 41:0 / 1
+    # 42:0 / 1
     # ---------------------------- End ----------------------------
 
     # restore A
