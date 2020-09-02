@@ -37,7 +37,7 @@ pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Stage3Token>, Errors> {
                 }
                 if was_litteral {
                     output.push(Stage3Token::Executable(
-                        literal_caret.unwrap().merge(position),
+                        literal_caret.unwrap().clone(),
                         litteral,
                     ));
                 }
@@ -99,7 +99,7 @@ pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Stage3Token>, Errors> {
                 }
                 if was_litteral {
                     output.push(Stage3Token::Executable(
-                        literal_caret.unwrap().merge(position),
+                        literal_caret.unwrap().clone(),
                         litteral,
                     ));
                     was_litteral = false;
