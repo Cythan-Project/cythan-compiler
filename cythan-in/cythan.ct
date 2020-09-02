@@ -20,7 +20,7 @@ eraseable = (999)
 
 nullOp nullOp nullOp nullOp nullOp nullOp
 
-jump {~+2 0 self.0}
+jum {~+2 0 self.0}
 
 ifBin { # <input jumpA jumpB>
     '#0 1

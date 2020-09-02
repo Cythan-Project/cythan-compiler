@@ -28,7 +28,7 @@ nullOp
 nullOp
 nullOp
 
-jump {
+jum {
     ~+2
     0
     self.0

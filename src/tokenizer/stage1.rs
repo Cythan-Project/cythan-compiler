@@ -7,7 +7,7 @@ impl filters::Filter for CythanV1 {
     fn on_char(&self, c: &char) -> (bool, bool) {
         match *c {
             '(' | ')' | '{' | '}' => (true, true),
-            ' ' => (true, false),
+            ' ' => (true, true),
             _ => (false, false),
         }
     }
@@ -15,21 +15,81 @@ impl filters::Filter for CythanV1 {
 
 #[derive(Debug, Clone)]
 pub enum Stage1Token<'a> {
-    Literal(Cow<'a, str>),
+    Literal(Position, Cow<'a, str>),
     //KeywordFn,
-    OpenParenthesis,
-    CloseParenthesis,
-    OpenBrackets,
-    CloseBrackets,
-    Equals,
+    OpenParenthesis(Position),
+    CloseParenthesis(Position),
+    OpenBrackets(Position),
+    CloseBrackets(Position),
+    Equals(Position),
+}
+
+#[derive(Debug, Clone)]
+pub struct Position {
+    pub line_from: usize,
+    pub line_to: usize,
+    pub caret_from: usize,
+    pub caret_to: usize,
+}
+
+impl Position {
+    fn new(line: usize, from: usize, to: usize) -> Self {
+        Self {
+            line_from: line,
+            line_to: line,
+            caret_from: from,
+            caret_to: to,
+        }
+    }
+
+    pub fn to_str(&self) -> String {
+        if self.line_from == self.line_to {
+            format!(
+                "Error line {} [{},{}]",
+                self.line_to, self.caret_from, self.caret_to
+            )
+        } else {
+            format!(
+                "Error from line {} [{}] to line {} [{}]",
+                self.line_from, self.caret_from, self.line_to, self.caret_to
+            )
+        }
+    }
+
+    pub fn merge(&self, position: &Position) -> Self {
+        let (line_from, caret_from) = if self.line_from < position.line_from {
+            (self.line_from, self.caret_from)
+        } else if self.line_from == position.line_from {
+            (self.line_from, self.caret_from.min(position.caret_from))
+        } else {
+            (position.line_from, self.caret_from)
+        };
+        let (line_to, caret_to) = if self.line_to > position.line_to {
+            (self.line_to, self.caret_to)
+        } else if self.line_to == position.line_to {
+            (self.line_to, self.caret_to.max(position.caret_to))
+        } else {
+            (position.line_to, self.caret_to)
+        };
+        Self {
+            line_from,
+            line_to,
+            caret_from,
+            caret_to,
+        }
+    }
 }
 
 #[inline]
-pub fn compile(line: &str) -> Vec<Stage1Token> {
+pub fn compile(line: &str, line_number: usize) -> Vec<Stage1Token> {
     let tokens = FilteredTokenizer::new(CythanV1 {}, line).collect::<Vec<Token>>();
     let mut out = Vec::new();
+    let mut caret = 0;
     for i in tokens {
         let t = i.term;
+        let from = caret;
+        caret += t.len();
+        let to = caret;
         if t.trim().is_empty() {
             continue;
         }
@@ -41,17 +101,17 @@ pub fn compile(line: &str) -> Vec<Stage1Token> {
                 Stage1Token::KeywordFn
             } else */
             if t == "(" {
-                Stage1Token::OpenParenthesis
+                Stage1Token::OpenParenthesis(Position::new(line_number, from, to))
             } else if t == ")" {
-                Stage1Token::CloseParenthesis
+                Stage1Token::CloseParenthesis(Position::new(line_number, from, to))
             } else if t == "{" {
-                Stage1Token::OpenBrackets
+                Stage1Token::OpenBrackets(Position::new(line_number, from, to))
             } else if t == "}" {
-                Stage1Token::CloseBrackets
+                Stage1Token::CloseBrackets(Position::new(line_number, from, to))
             } else if t == "=" {
-                Stage1Token::Equals
+                Stage1Token::Equals(Position::new(line_number, from, to))
             } else {
-                Stage1Token::Literal(t)
+                Stage1Token::Literal(Position::new(line_number, from, to), t)
             },
         );
     }
@@ -66,17 +126,17 @@ pub enum Number {
     PointerDefineAndAdd(String, InnerNumber, isize),
 }
 
-fn text_to_added_number(s: &str) -> Option<(InnerNumber, isize)> {
+fn text_to_added_number(s: &str, position: Position) -> Option<(InnerNumber, isize)> {
     if s.contains('+') {
         let mut iter = s.split('+');
         Some((
-            iter.next().unwrap().parse().ok()?,
+            InnerNumber::from_str(iter.next().unwrap(), position)?,
             iter.next().map(|x| x.parse::<isize>().ok()).flatten()?,
         ))
     } else if s.contains('-') {
         let mut iter = s.split('-');
         Some((
-            iter.next().unwrap().parse().ok()?,
+            InnerNumber::from_str(iter.next().unwrap(), position)?,
             -iter.next().map(|x| x.parse::<isize>().ok()).flatten()?,
         ))
     } else {
@@ -84,65 +144,11 @@ fn text_to_added_number(s: &str) -> Option<(InnerNumber, isize)> {
     }
 }
 
-impl std::str::FromStr for Number {
-    type Err = &'static str;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        if value.starts_with('\'') && value.contains(':') {
-            // Pointer Define or Pointer and add
-
-            let mut iter = value.split(':');
-
-            let name = iter.next().unwrap();
-            let name = name[1..name.len()].to_owned();
-
-            let text = iter.next().unwrap();
-
-            if value.contains('+') || value.contains('-') {
-                if let Some((e, e2)) = text_to_added_number(text) {
-                    Ok(Number::PointerDefineAndAdd(name, e, e2))
-                } else {
-                    Err("Not a valid PointerDefineAndAdd")
-                }
-            } else {
-                Ok(Number::PointerDefine(name, text.parse::<InnerNumber>()?))
-            }
-        } else if value.contains('+') || value.contains('-') {
-            if let Some((e, e2)) = text_to_added_number(value) {
-                Ok(Number::Add(e, e2))
-            } else {
-                Err("Not a valid Add")
-            }
-        } else {
-            Ok(Number::Plain(value.parse::<InnerNumber>()?))
-        }
-    }
-}
-
 #[derive(Clone, Debug)]
 pub enum InnerNumber {
-    Current,                  // Tilde
-    PointerReference(String), // Pointer String,
-    Number(usize),            // Number
-}
-
-impl std::str::FromStr for InnerNumber {
-    type Err = &'static str;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        if value.starts_with('\'') {
-            Ok(InnerNumber::PointerReference(
-                value[1..value.len()].to_owned(),
-            ))
-        } else if value == "~" {
-            Ok(InnerNumber::Current)
-        } else {
-            value
-                .parse::<usize>()
-                .map(InnerNumber::Number)
-                .map_err(|_| "Invalid number")
-        }
-    }
+    Current(Position),                  // Tilde
+    PointerReference(Position, String), // Pointer String,
+    Number(Position, usize),            // Number
 }
 
 use super::errors::Errors;
@@ -177,6 +183,40 @@ impl Number {
             }
         })
     }
+
+    pub fn from_str(value: &str, position: Position) -> Option<Self> {
+        if value.starts_with('\'') && value.contains(':') {
+            // Pointer Define or Pointer and add
+
+            let mut iter = value.split(':');
+
+            let name = iter.next().unwrap();
+            let name = name[1..name.len()].to_owned();
+
+            let text = iter.next().unwrap();
+
+            if value.contains('+') || value.contains('-') {
+                if let Some((e, e2)) = text_to_added_number(text, position) {
+                    Some(Number::PointerDefineAndAdd(name, e, e2))
+                } else {
+                    None
+                }
+            } else {
+                Some(Number::PointerDefine(
+                    name,
+                    InnerNumber::from_str(text, position)?,
+                ))
+            }
+        } else if value.contains('+') || value.contains('-') {
+            if let Some((e, e2)) = text_to_added_number(value, position) {
+                Some(Number::Add(e, e2))
+            } else {
+                None
+            }
+        } else {
+            Some(Number::Plain(InnerNumber::from_str(value, position)?))
+        }
+    }
 }
 
 use std::collections::HashMap;
@@ -184,17 +224,34 @@ use std::collections::HashMap;
 impl InnerNumber {
     pub fn get_value(&self, current: usize, labels: &HashMap<String, u32>) -> Result<u32, Errors> {
         match self {
-            Self::Current => Ok(current as u32),
-            Self::Number(e) => Ok(*e as u32),
-            Self::PointerReference(e) => {
+            Self::Current(_) => Ok(current as u32),
+            Self::Number(_, e) => Ok(*e as u32),
+            Self::PointerReference(position, e) => {
                 if let Some(e) = labels.get(e) {
                     Ok(*e)
                 } else {
                     Err(Errors::LabelNotFound {
+                        position: position.clone(),
                         label_name: e.to_owned(),
                     })
                 }
             }
+        }
+    }
+
+    fn from_str(value: &str, position: Position) -> Option<Self> {
+        if value.starts_with('\'') {
+            Some(InnerNumber::PointerReference(
+                position,
+                value[1..value.len()].to_owned(),
+            ))
+        } else if value == "~" {
+            Some(InnerNumber::Current(position))
+        } else {
+            value
+                .parse::<usize>()
+                .map(|x| InnerNumber::Number(position, x))
+                .ok()
         }
     }
 }

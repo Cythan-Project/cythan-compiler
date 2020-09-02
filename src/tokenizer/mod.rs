@@ -12,7 +12,8 @@ pub fn generate_tokens(string: &str) -> Result<Vec<stage3::Stage3Token>, Errors>
     Ok(stage3::compile(&stage2::compile(
         &string
             .lines()
-            .map(|x| stage1::compile(x))
+            .enumerate()
+            .map(|(i, x)| stage1::compile(x, i + 1))
             .flatten()
             .collect::<Vec<stage1::Stage1Token>>()
             .iter()
@@ -24,7 +25,8 @@ pub fn generate_tokens_stage2(string: &str) -> Result<Vec<stage2::Stage2Token>, 
     stage2::compile(
         &string
             .lines()
-            .map(|x| stage1::compile(x))
+            .enumerate()
+            .map(|(i, x)| stage1::compile(x, i + 1))
             .flatten()
             .collect::<Vec<stage1::Stage1Token>>()
             .iter()

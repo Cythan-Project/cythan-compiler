@@ -1,4 +1,4 @@
-use super::stage1::{InnerNumber, Number};
+use super::stage1::{InnerNumber, Number, Position};
 use super::stage3::Stage3Token;
 use std::collections::HashMap;
 
@@ -28,11 +28,11 @@ impl Context {
         current_int: &mut u64,
     ) -> CompilerResult {
         match token {
-            Stage3Token::FunctionCreation(name, code) => {
+            Stage3Token::FunctionCreation(position, name, code) => {
                 self.functions.insert(name.to_owned(), code.clone());
                 Ok(Vec::new())
             }
-            Stage3Token::FunctionExecution(name, args) => {
+            Stage3Token::FunctionExecution(position, name, args) => {
                 let (fnname, label) = if name.starts_with("'") && name.contains(":") {
                     let mut iter = name.split(":");
                     let label = iter.next().unwrap();
@@ -48,6 +48,7 @@ impl Context {
                     e.clone()
                 } else {
                     return Err(Errors::FunctionNotFound {
+                        position: position.clone(),
                         function_name: fnname,
                     });
                 };
@@ -62,7 +63,7 @@ impl Context {
                 }
                 Ok(out)
             }
-            Stage3Token::VariableDefinition(name, value) => {
+            Stage3Token::VariableDefinition(position, name, value) => {
                 let result = value
                     .iter()
                     .map(|x| self.execute(x, function_data, current_int))
@@ -71,7 +72,9 @@ impl Context {
                     .insert(name.to_owned(), result.into_iter().flatten().collect());
                 Ok(vec![])
             }
-            Stage3Token::Executable(name) => get_value(name, &self.variables, &function_data),
+            Stage3Token::Executable(position, name) => {
+                get_value(name, &self.variables, &function_data, position.clone())
+            }
         }
     }
 
@@ -97,22 +100,24 @@ fn get_value(
     literal: &str,
     variables: &HashMap<String, Vec<Number>>,
     function_args: &[Number],
+    position: Position,
 ) -> CompilerResult {
     if literal.contains(':')
         && literal.starts_with('\'')
         && !literal.contains('+')
         && !literal.contains('-')
     {
-        if let Ok(e) = literal.parse::<Number>() {
+        if let Some(e) = Number::from_str(literal, position.clone()) {
             Ok(vec![e])
         } else {
             let mut iter = literal.split(':');
             let label = iter.next().unwrap();
             let label = label[1..label.len()].to_owned();
             let variable = iter.next().unwrap();
-            if let Some(mut e) = get_var(function_args, variable, variables)? {
+            if let Some(mut e) = get_var(function_args, variable, variables, position.clone())? {
                 if e.is_empty() {
                     Err(Errors::EmptyVariable {
+                        position,
                         varname: variable.to_owned(),
                     })
                 } else {
@@ -121,6 +126,7 @@ fn get_value(
                 }
             } else {
                 Err(Errors::UndefinedVariable {
+                    position,
                     varname: variable.to_owned(),
                 })
             }
@@ -130,19 +136,21 @@ fn get_value(
         && !literal.contains('+')
         && !literal.contains('-')
     {
-        if let Ok(e) = literal.parse::<Number>() {
+        if let Some(e) = Number::from_str(literal, position.clone()) {
             Ok(vec![e])
-        } else if let Some(e) = get_var(function_args, literal, variables)? {
+        } else if let Some(e) = get_var(function_args, literal, variables, position.clone())? {
             Ok(e)
         } else {
             Err(Errors::VariableNotFound {
+                position,
                 variable_name: literal.to_owned(),
             })
         }
-    } else if let Ok(e) = literal.parse::<Number>() {
+    } else if let Some(e) = Number::from_str(literal, position.clone()) {
         Ok(vec![e])
     } else {
         Err(Errors::UnableToReadLitteral {
+            position,
             litteral: literal.to_owned(),
         })
     }
@@ -193,7 +201,7 @@ fn try_rename_inner_number(
     current_int: &mut u64,
     labels: &mut HashMap<String, String>,
 ) {
-    if let InnerNumber::PointerReference(reference) = inner_number {
+    if let InnerNumber::PointerReference(position, reference) = inner_number {
         try_rename_string(reference, current_int, labels)
     }
 }
@@ -202,6 +210,7 @@ fn get_var(
     function_args: &[Number],
     pattern: &str,
     map: &HashMap<String, Vec<Number>>,
+    position: Position,
 ) -> Result<Option<Vec<Number>>, Errors> {
     if pattern == "self" {
         Ok(Some(function_args.to_vec()))
@@ -209,6 +218,7 @@ fn get_var(
         Ok(Some(pattern_to_value(
             function_args,
             &pattern.replace("self.", ""),
+            position,
         )?))
     } else {
         Ok(map.get(pattern).cloned())
@@ -225,18 +235,20 @@ macro_rules! expect_r {
     };
 }
 
-fn pattern_to_value(function_args: &[Number], pattern: &str) -> CompilerResult {
+fn pattern_to_value(function_args: &[Number], pattern: &str, position: Position) -> CompilerResult {
     if pattern.contains('?') {
         let mut iter = pattern.split('?');
         let before = if let Some(e) = iter.next() {
             e
         } else {
             return Err(Errors::SelfExpressionMissingNumberBeforeQuestionMark {
+                position,
                 expression: pattern.to_owned(),
             });
         };
         if before.is_empty() {
             return Err(Errors::SelfExpressionMissingNumberBeforeQuestionMark {
+                position,
                 expression: pattern.to_owned(),
             });
         }
@@ -247,12 +259,14 @@ fn pattern_to_value(function_args: &[Number], pattern: &str) -> CompilerResult {
             let a2 = pattern1.next().unwrap().trim();
             if a1.is_empty() {
                 return Err(Errors::SelfExpressionMissingNumber {
+                    position,
                     expression: pattern.to_owned(),
                 });
             }
             let start = expect_r!(
                 a1.parse::<u32>(),
                 Errors::SelfExpressionXNotNumber {
+                    position,
                     expression: pattern.to_owned(),
                 }
             );
@@ -262,6 +276,7 @@ fn pattern_to_value(function_args: &[Number], pattern: &str) -> CompilerResult {
                 expect_r!(
                     a2.parse::<u32>(),
                     Errors::SelfExpressionYNotNumber {
+                        position,
                         expression: pattern.to_owned(),
                     }
                 )
@@ -271,6 +286,7 @@ fn pattern_to_value(function_args: &[Number], pattern: &str) -> CompilerResult {
             let content = expect_r!(
                 before.parse::<u32>(),
                 Errors::SelfExpressionXNotNumber {
+                    position,
                     expression: pattern.to_owned(),
                 }
             );
@@ -286,7 +302,10 @@ fn pattern_to_value(function_args: &[Number], pattern: &str) -> CompilerResult {
             .map(|x| {
                 function_args
                     .get(x as usize)
-                    .unwrap_or(&Number::Plain(InnerNumber::Number(replace_with as usize)))
+                    .unwrap_or(&Number::Plain(InnerNumber::Number(
+                        position.clone(),
+                        replace_with as usize,
+                    )))
                     .clone()
             })
             .collect())
@@ -298,12 +317,14 @@ fn pattern_to_value(function_args: &[Number], pattern: &str) -> CompilerResult {
             let a2 = pattern1.next().unwrap().trim();
             if a1.is_empty() {
                 return Err(Errors::SelfExpressionMissingNumber {
+                    position,
                     expression: pattern.to_owned(),
                 });
             }
             let start = expect_r!(
                 a1.parse::<u32>(),
                 Errors::SelfExpressionXNotNumber {
+                    position,
                     expression: pattern.to_owned(),
                 }
             );
@@ -313,6 +334,7 @@ fn pattern_to_value(function_args: &[Number], pattern: &str) -> CompilerResult {
                 expect_r!(
                     a2.parse::<u32>(),
                     Errors::SelfExpressionYNotNumber {
+                        position,
                         expression: pattern.to_owned(),
                     }
                 )
@@ -322,6 +344,7 @@ fn pattern_to_value(function_args: &[Number], pattern: &str) -> CompilerResult {
             let content = expect_r!(
                 pattern.parse::<u32>(),
                 Errors::SelfExpressionXNotNumber {
+                    position,
                     expression: pattern.to_owned(),
                 }
             );
