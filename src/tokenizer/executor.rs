@@ -49,6 +49,7 @@ impl Context {
                 } else {
                     return Err(Errors::FunctionNotFound {
                         position: position.clone(),
+                        function_names: self.functions.keys().cloned().collect(),
                         function_name: fnname,
                     });
                 };
@@ -143,6 +144,7 @@ fn get_value(
         } else {
             Err(Errors::VariableNotFound {
                 position,
+                variable_names: variables.keys().cloned().collect(),
                 variable_name: literal.to_owned(),
             })
         }

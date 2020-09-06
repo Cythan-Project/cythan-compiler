@@ -232,6 +232,7 @@ impl InnerNumber {
                 } else {
                     Err(Errors::LabelNotFound {
                         position: position.clone(),
+                        label_names: labels.keys().cloned().collect(),
                         label_name: e.to_owned(),
                     })
                 }

@@ -1,16 +1,21 @@
 use super::stage1::Position;
 
+use super::quick_fix::*;
+
 pub enum Errors {
     FunctionNotFound {
         function_name: String,
+        function_names: Vec<String>,
         position: Position,
     },
     VariableNotFound {
         variable_name: String,
+        variable_names: Vec<String>,
         position: Position,
     },
     LabelNotFound {
         label_name: String,
+        label_names: Vec<String>,
         position: Position,
     },
     EmptyVariable {
@@ -84,6 +89,7 @@ impl Errors {
         match self {
             Errors::FunctionNotFound {
                 position,
+                function_names,
                 function_name,
             } => {
                 out.push_str(&position.to_str());
@@ -98,6 +104,7 @@ impl Errors {
             }
             Errors::VariableNotFound {
                 position,
+                variable_names,
                 variable_name,
             } => {
                 out.push_str(&position.to_str());
@@ -114,6 +121,7 @@ impl Errors {
             }
             Errors::LabelNotFound {
                 position,
+                label_names,
                 label_name,
             } => {
                 out.push_str(&position.to_str());
@@ -295,4 +303,146 @@ impl Errors {
         }
         out
     }
+
+    pub fn get_fixes(&self) -> Vec<QuickFix> {
+        let mut fixes = Vec::new();
+        match self {
+            Self::VariableNotFound {
+                variable_name,
+                variable_names,
+                position,
+            } => {
+                for i in get_similars(variable_name, variable_names) {
+                    fixes.push(QuickFix {
+                        position: position.clone(),
+                        placement: QuickFixPosition::REPLACE_FIRST(variable_name.len()),
+                        text: i.to_owned(),
+                    })
+                }
+            }
+            Self::FunctionNotFound {
+                function_name,
+                function_names,
+                position,
+            } => {
+                for i in get_similars(function_name, function_names) {
+                    fixes.push(QuickFix {
+                        position: position.clone(),
+                        placement: QuickFixPosition::REPLACE_FIRST(function_name.len()),
+                        text: i.to_owned(),
+                    })
+                }
+            }
+            Self::LabelNotFound {
+                label_name,
+                label_names,
+                position,
+            } => {
+                for i in get_similars(label_name, label_names) {
+                    fixes.push(QuickFix {
+                        position: position.clone(),
+                        placement: QuickFixPosition::REPLACE_FIRST(label_name.len()),
+                        text: i.to_owned(),
+                    })
+                }
+            }
+            _ => (),
+        }
+        fixes
+    }
+}
+
+#[test]
+pub fn test_simmilar() {
+    println!(
+        "{:?}",
+        get_similars(
+            "test",
+            &vec![
+                "tast".to_owned(),
+                "re1".to_owned(),
+                "testAc".to_owned(),
+                "voirie".to_owned(),
+                "chucktesta".to_owned()
+            ]
+        )
+    );
+}
+
+pub fn get_similars(input: &str, discriminant: &[String]) -> Vec<String> {
+    discriminant
+        .iter()
+        .filter(|x| generic_damerau_levenshtein(input, x) < 3)
+        .cloned()
+        .collect()
+}
+
+use std::cmp::min;
+use std::collections::HashMap;
+
+pub fn generic_damerau_levenshtein(a_elems: &str, b_elems: &str) -> usize {
+    let a_len = a_elems.len();
+    let b_len = b_elems.len();
+
+    let a_elems_char = a_elems.chars().collect::<Vec<char>>();
+    let b_elems_char = b_elems.chars().collect::<Vec<char>>();
+
+    if a_len == 0 {
+        return b_len;
+    }
+    if b_len == 0 {
+        return a_len;
+    }
+
+    let width = a_len + 2;
+    let mut distances = vec![0; (a_len + 2) * (b_len + 2)];
+    let max_distance = a_len + b_len;
+    distances[0] = max_distance;
+
+    for i in 0..(a_len + 1) {
+        distances[flat_index(i + 1, 0, width)] = max_distance;
+        distances[flat_index(i + 1, 1, width)] = i;
+    }
+
+    for j in 0..(b_len + 1) {
+        distances[flat_index(0, j + 1, width)] = max_distance;
+        distances[flat_index(1, j + 1, width)] = j;
+    }
+
+    let mut elems: HashMap<char, usize> = HashMap::with_capacity(64);
+
+    for i in 1..(a_len + 1) {
+        let mut db = 0;
+
+        for j in 1..(b_len + 1) {
+            let k = match elems.get(&b_elems_char[j - 1]) {
+                Some(&value) => value,
+                None => 0,
+            };
+
+            let insertion_cost = distances[flat_index(i, j + 1, width)] + 1;
+            let deletion_cost = distances[flat_index(i + 1, j, width)] + 1;
+            let transposition_cost =
+                distances[flat_index(k, db, width)] + (i - k - 1) + 1 + (j - db - 1);
+
+            let mut substitution_cost = distances[flat_index(i, j, width)] + 1;
+            if a_elems_char[i - 1] == b_elems_char[j - 1] {
+                db = j;
+                substitution_cost -= 1;
+            }
+
+            distances[flat_index(i + 1, j + 1, width)] = min(
+                substitution_cost,
+                min(insertion_cost, min(deletion_cost, transposition_cost)),
+            );
+        }
+
+        elems.insert(a_elems_char[i - 1], i);
+    }
+
+    distances[flat_index(a_len + 1, b_len + 1, width)]
+}
+
+fn flat_index(i: usize, j: usize, width: usize) -> usize {
+    j * width + i
 }
