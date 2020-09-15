@@ -154,6 +154,14 @@ pub enum InnerNumber {
 use super::errors::Errors;
 
 impl Number {
+    pub fn get_as_label(&self) -> Option<&str> {
+        match self {
+            Self::PointerDefine(pointer, _) => Some(pointer),
+            Self::PointerDefineAndAdd(pointer, _, _) => Some(pointer),
+            _ => None,
+        }
+    }
+
     pub fn labelize(&self, label: String) -> Self {
         match self {
             Number::Plain(e) => Number::PointerDefine(label, e.clone()),
@@ -169,17 +177,18 @@ impl Number {
         &self,
         current: usize,
         labels: &mut HashMap<String, u32>,
+        tokens: &Vec<Number>,
     ) -> Result<u32, Errors> {
         Ok(match self {
-            Self::Add(e, i) => (e.get_value(current, labels)? as isize + i) as u32,
-            Self::Plain(e) => e.get_value(current, labels)?,
+            Self::Add(e, i) => (e.get_value(current, labels, tokens)? as isize + i) as u32,
+            Self::Plain(e) => e.get_value(current, labels, tokens)?,
             Self::PointerDefine(name, e) => {
                 labels.insert(name.to_owned(), current as u32);
-                e.get_value(current, labels)?
+                e.get_value(current, labels, tokens)?
             }
             Self::PointerDefineAndAdd(name, e, i) => {
                 labels.insert(name.to_owned(), current as u32);
-                (e.get_value(current, labels)? as isize + i) as u32
+                (e.get_value(current, labels, tokens)? as isize + i) as u32
             }
         })
     }
@@ -222,13 +231,26 @@ impl Number {
 use std::collections::HashMap;
 
 impl InnerNumber {
-    pub fn get_value(&self, current: usize, labels: &HashMap<String, u32>) -> Result<u32, Errors> {
+    pub fn get_value(
+        &self,
+        current: usize,
+        labels: &HashMap<String, u32>,
+        tokens: &Vec<Number>,
+    ) -> Result<u32, Errors> {
         match self {
             Self::Current(_) => Ok(current as u32),
             Self::Number(_, e) => Ok(*e as u32),
             Self::PointerReference(position, e) => {
                 if let Some(e) = labels.get(e) {
                     Ok(*e)
+                } else if let Some(e) = tokens.iter().skip(current).position(|x| {
+                    if let Some(tmp_e) = x.get_as_label() {
+                        tmp_e == e
+                    } else {
+                        false
+                    }
+                }) {
+                    Ok(e as u32)
                 } else {
                     Err(Errors::LabelNotFound {
                         position: position.clone(),

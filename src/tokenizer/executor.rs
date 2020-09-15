@@ -83,14 +83,17 @@ impl Context {
         let p = &Vec::new();
         let mut integer = 0u64;
         let mut labels = HashMap::new();
-        Ok(tokens
+        let list = tokens
             .iter()
             .map(|x| self.execute(x, &p, &mut integer))
             .collect::<Result<Vec<_>, _>>()?
             .into_iter()
             .flatten()
+            .collect::<Vec<Number>>();
+        Ok(list
+            .iter()
             .enumerate()
-            .map(|(i, x)| x.get_value(i, &mut labels))
+            .map(|(i, x)| x.get_value(i, &mut labels, &list))
             .collect::<Result<Vec<u32>, Errors>>()?)
     }
 }
