@@ -30,14 +30,14 @@ pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Stage3Token>, Errors> {
                 }
                 if was_assignement {
                     return Err(Errors::LiteralAfterAssignement {
-                        position: literal_caret.unwrap().merge(position),
+                        position: literal_caret.expect("A").merge(position),
                         literal: e.clone().into_owned(),
                         assignement: litteral,
                     });
                 }
                 if was_litteral {
                     output.push(Stage3Token::Executable(
-                        literal_caret.unwrap().clone(),
+                        literal_caret.expect("B").clone(),
                         litteral,
                     ));
                 }
@@ -48,13 +48,13 @@ pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Stage3Token>, Errors> {
             Stage2Token::Block(position, e) => {
                 if was_assignement {
                     return Err(Errors::BlockAfterAssignement {
-                        position: literal_caret.unwrap().merge(position),
+                        position: literal_caret.expect("C").merge(position),
                         assignement: litteral,
                     });
                 }
                 if was_litteral {
                     output.push(Stage3Token::FunctionCreation(
-                        literal_caret.unwrap().merge(position),
+                        literal_caret.expect("D").merge(position),
                         litteral,
                         compile(e)?,
                     ));
@@ -69,7 +69,7 @@ pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Stage3Token>, Errors> {
             Stage2Token::Parenthesis(position, e) => {
                 if was_litteral {
                     output.push(Stage3Token::FunctionExecution(
-                        literal_caret.unwrap().merge(position),
+                        literal_caret.expect("E").merge(position),
                         litteral,
                         compile(e)?,
                     ));
@@ -77,7 +77,7 @@ pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Stage3Token>, Errors> {
                     was_litteral = false;
                 } else if was_assignement {
                     output.push(Stage3Token::VariableDefinition(
-                        literal_caret.unwrap().merge(position),
+                        literal_caret.expect("F").merge(position),
                         litteral,
                         compile(e)?,
                     ));
@@ -92,14 +92,14 @@ pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Stage3Token>, Errors> {
             Stage2Token::Assignement(position, e) => {
                 if was_assignement {
                     return Err(Errors::AssignementFollowedByAnotherAssignement {
-                        position: literal_caret.unwrap().merge(position),
+                        position: literal_caret.expect("G").merge(position),
                         assignement1: litteral,
                         assignement2: e.clone().into_owned(),
                     });
                 }
                 if was_litteral {
                     output.push(Stage3Token::Executable(
-                        literal_caret.unwrap().clone(),
+                        literal_caret.expect("H").clone(),
                         litteral,
                     ));
                     was_litteral = false;
@@ -124,7 +124,7 @@ pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Stage3Token>, Errors> {
     }
     if was_litteral {
         output.push(Stage3Token::Executable(
-            literal_caret.unwrap().clone(),
+            literal_caret.expect("I").clone(),
             litteral,
         ));
     }
