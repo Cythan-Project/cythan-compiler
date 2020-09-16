@@ -26,3 +26,11 @@ fn test() {
 
     //assert_eq!(tokens.get(0).unwrap().term(), "hello");
 }
+#[test]
+fn run() {
+    let out = Context::default().compute(
+        &tokenizer::generate_tokens(&std::fs::read_to_string("cythan-in/cythan.ct").unwrap())
+            .unwrap(),
+    );
+    println!("{:?}", out)
+}
