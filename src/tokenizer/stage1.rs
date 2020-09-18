@@ -118,7 +118,7 @@ pub fn compile(line: &str, line_number: usize) -> Vec<Stage1Token> {
     out
 }
 
-#[derive(Clone, Debug)]
+/*#[derive(Clone, Debug)]
 pub enum Number {
     Plain(InnerNumber),
     Add(InnerNumber, isize),
@@ -275,54 +275,6 @@ impl InnerNumber {
                 .parse::<usize>()
                 .map(|x| InnerNumber::Number(position, x))
                 .ok()
-        }
-    }
-}
-
-/*
-Expression:
-Plain(Nombre)
-Added(Nombre, i32)
-
-Enum: Nombre, pointer, ~
-
-<operation> -> Enum + Enum
-
-Nombre
-Nombre Relatif
-Pointer
-Pointer Relatif
-Pointer: Nombre
-Pointer: Nombre
-Pointer: Pointer
-Pointer: Pointer
-
-0 0 0 0 0 0
--> Pointeurs
-
--> 'test1
-
-
-#[derive(Debug, Clone)]
-pub enum Number {
-    Relative(i32),
-    Absolute(u32)
-}
-
-impl std::str::FromStr for Number {
-    type Err = &'static str;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        if value.starts_with("~") {
-            if let Ok(e) = value[1..value.len()].parse::<i32>() {
-                Ok(Number::Relative(e))
-            } else {
-                Err("Not a number")
-            }
-        } else if let Ok(e) = value.parse::<u32>() {
-            Ok(Number::Absolute(e))
-        } else {
-            Err("Not a number")
         }
     }
 }*/

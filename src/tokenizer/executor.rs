@@ -1,14 +1,16 @@
-use super::stage1::{InnerNumber, Number, Position};
+use super::stage1::Position;
 use super::stage3::Stage3Token;
 use std::collections::HashMap;
 
 use super::errors::Errors;
 
-type CompilerResult = Result<Vec<Number>, Errors>;
+use super::value::Value;
+
+type CompilerResult = Result<Vec<Value>, Errors>;
 
 pub struct Context {
     functions: HashMap<String, Vec<Stage3Token>>,
-    variables: HashMap<String, Vec<Number>>,
+    variables: HashMap<String, Vec<Value>>,
 }
 
 impl Default for Context {
@@ -24,7 +26,7 @@ impl Context {
     pub fn execute(
         &mut self,
         token: &Stage3Token,
-        function_data: &[Number],
+        function_data: &Vec<Value>,
         current_int: &mut u64,
     ) -> CompilerResult {
         match token {
@@ -59,7 +61,9 @@ impl Context {
                 );
                 if let Some(e) = label {
                     if !out.is_empty() {
-                        out[0] = out[0].labelize(e);
+                        let mut set = std::collections::HashSet::with_capacity(1);
+                        set.insert(e);
+                        out[0].add_labels(set);
                     }
                 }
                 Ok(out)
@@ -68,18 +72,18 @@ impl Context {
                 let result = value
                     .iter()
                     .map(|x| self.execute(x, function_data, current_int))
-                    .collect::<Result<Vec<Vec<Number>>, Errors>>()?;
+                    .collect::<Result<Vec<Vec<Value>>, Errors>>()?;
                 self.variables
                     .insert(name.to_owned(), result.into_iter().flatten().collect());
                 Ok(vec![])
             }
             Stage3Token::Executable(position, name) => {
-                get_value(name, &self.variables, &function_data, position.clone())
+                Ok(name.clone().execute(&self.variables, function_data))
             }
         }
     }
 
-    pub fn compute(&mut self, tokens: &[Stage3Token]) -> Result<Vec<u32>, Errors> {
+    pub fn compute(&mut self, tokens: &[Stage3Token]) -> Result<Vec<usize>, Errors> {
         let p = &Vec::new();
         let mut integer = 0u64;
         let mut labels = HashMap::new();
@@ -89,21 +93,21 @@ impl Context {
             .collect::<Result<Vec<_>, _>>()?
             .into_iter()
             .flatten()
-            .collect::<Vec<Number>>();
+            .collect::<Vec<Value>>();
         Ok(list
             .iter()
             .enumerate()
-            .map(|(i, x)| x.get_value(i, &mut labels, &list))
-            .collect::<Result<Vec<u32>, Errors>>()?)
+            .map(|(i, x)| x.compute_value(i, &mut labels, &list))
+            .collect::<Vec<usize>>())
     }
 }
 // Variable
 // Pattern contenant une variable
 // Pattern
-fn get_value(
+/*fn get_value(
     literal: &str,
-    variables: &HashMap<String, Vec<Number>>,
-    function_args: &[Number],
+    variables: &HashMap<String, Vec<Value>>,
+    function_args: &Vec<Value>,
     position: Position,
 ) -> CompilerResult {
     if literal.contains(':')
@@ -111,7 +115,7 @@ fn get_value(
         && !literal.contains('+')
         && !literal.contains('-')
     {
-        if let Some(e) = Number::from_str(literal, position.clone()) {
+        if let Some(e) = Value::from_str(literal, position.clone()) {
             Ok(vec![e])
         } else {
             let mut iter = literal.split(':');
@@ -159,23 +163,23 @@ fn get_value(
             litteral: literal.to_owned(),
         })
     }
-}
+}*/
 
-fn rename_labels(code: Vec<Number>, current_int: &mut u64) -> Vec<Number> {
+fn rename_labels(code: Vec<Value>, current_int: &mut u64) -> Vec<Value> {
     let mut labels: HashMap<String, String> = HashMap::new();
 
     code.into_iter()
         .map(|mut x| {
             match &mut x {
-                Number::Add(a, _) => try_rename_inner_number(a, current_int, &mut labels),
-                Number::Plain(a) => try_rename_inner_number(a, current_int, &mut labels),
-                Number::PointerDefine(a, b) => {
-                    try_rename_string(a, current_int, &mut labels);
-                    try_rename_inner_number(b, current_int, &mut labels)
+                Value::Label(lbls, label, _) => {
+                    try_rename_string(label, current_int, &mut labels);
+                    *lbls = remap_labels(&lbls, current_int, &mut labels);
                 }
-                Number::PointerDefineAndAdd(a, b, _) => {
-                    try_rename_string(a, current_int, &mut labels);
-                    try_rename_inner_number(b, current_int, &mut labels)
+                Value::Absolute(lbls, _) => {
+                    *lbls = remap_labels(&lbls, current_int, &mut labels);
+                }
+                Value::Relative(lbls, _) => {
+                    *lbls = remap_labels(&lbls, current_int, &mut labels);
                 }
             }
             x
@@ -201,181 +205,44 @@ fn try_rename_string(
     }
 }
 
-fn try_rename_inner_number(
-    inner_number: &mut InnerNumber,
+use std::collections::HashSet;
+
+fn remap_labels(
+    set: &HashSet<String>,
     current_int: &mut u64,
     labels: &mut HashMap<String, String>,
-) {
-    if let InnerNumber::PointerReference(position, reference) = inner_number {
-        try_rename_string(reference, current_int, labels)
-    }
-}
-
-fn get_var(
-    function_args: &[Number],
-    pattern: &str,
-    map: &HashMap<String, Vec<Number>>,
-    position: Position,
-) -> Result<Option<Vec<Number>>, Errors> {
-    if pattern == "self" {
-        Ok(Some(function_args.to_vec()))
-    } else if pattern.starts_with("self.") {
-        Ok(Some(pattern_to_value(
-            function_args,
-            &pattern.replace("self.", ""),
-            position,
-        )?))
-    } else {
-        Ok(map.get(pattern).cloned())
-    }
-}
-
-macro_rules! expect_r {
-    ($ty:expr,$error:expr) => {
-        if let Ok(e) = $ty {
-            e
-        } else {
-            return Err($error);
-        }
-    };
-}
-
-fn pattern_to_value(function_args: &[Number], pattern: &str, position: Position) -> CompilerResult {
-    if pattern.contains('?') {
-        let mut iter = pattern.split('?');
-        let before = if let Some(e) = iter.next() {
-            e
-        } else {
-            return Err(Errors::SelfExpressionMissingNumberBeforeQuestionMark {
-                position,
-                expression: pattern.to_owned(),
-            });
-        };
-        if before.is_empty() {
-            return Err(Errors::SelfExpressionMissingNumberBeforeQuestionMark {
-                position,
-                expression: pattern.to_owned(),
-            });
-        }
-        let (start, end) = if before.contains("..") {
-            let p = format!(" {} ", before);
-            let mut pattern1 = p.split("..");
-            let a1 = pattern1.next().unwrap().trim();
-            let a2 = pattern1.next().unwrap().trim();
-            if a1.is_empty() {
-                return Err(Errors::SelfExpressionMissingNumber {
-                    position,
-                    expression: pattern.to_owned(),
-                });
+) -> HashSet<String> {
+    set.iter()
+        .flat_map(|reference| {
+            if reference.contains('#') {
+                return None;
             }
-            let start = expect_r!(
-                a1.parse::<u32>(),
-                Errors::SelfExpressionXNotNumber {
-                    position,
-                    expression: pattern.to_owned(),
-                }
-            );
-            let end = if a2.is_empty() {
-                function_args.len() as u32
+            Some(if let Some(e) = labels.get(reference) {
+                e.to_owned()
             } else {
-                expect_r!(
-                    a2.parse::<u32>(),
-                    Errors::SelfExpressionYNotNumber {
-                        position,
-                        expression: pattern.to_owned(),
-                    }
-                )
-            };
-            (start, end)
-        } else {
-            let content = expect_r!(
-                before.parse::<u32>(),
-                Errors::SelfExpressionXNotNumber {
-                    position,
-                    expression: pattern.to_owned(),
-                }
-            );
-            (content, content + 1)
-        };
-
-        let replace_with = iter
-            .next()
-            .map(|x| x.parse::<u32>().unwrap_or(0))
-            .unwrap_or(0);
-
-        Ok((start..end)
-            .map(|x| {
-                function_args
-                    .get(x as usize)
-                    .unwrap_or(&Number::Plain(InnerNumber::Number(
-                        position.clone(),
-                        replace_with as usize,
-                    )))
-                    .clone()
+                *current_int += 1;
+                let new = format!("label{}_{}", current_int, &reference);
+                labels.insert(reference.to_owned(), new.to_owned());
+                new
             })
-            .collect())
-    } else {
-        let (start, end) = if pattern.contains("..") {
-            let p = format!(" {} ", pattern);
-            let mut pattern1 = p.split("..");
-            let a1 = pattern1.next().unwrap().trim();
-            let a2 = pattern1.next().unwrap().trim();
-            if a1.is_empty() {
-                return Err(Errors::SelfExpressionMissingNumber {
-                    position,
-                    expression: pattern.to_owned(),
-                });
-            }
-            let start = expect_r!(
-                a1.parse::<u32>(),
-                Errors::SelfExpressionXNotNumber {
-                    position,
-                    expression: pattern.to_owned(),
-                }
-            );
-            let end = if a2.is_empty() {
-                function_args.len() as u32
-            } else {
-                expect_r!(
-                    a2.parse::<u32>(),
-                    Errors::SelfExpressionYNotNumber {
-                        position,
-                        expression: pattern.to_owned(),
-                    }
-                )
-            };
-            (start, end)
-        } else {
-            let content = expect_r!(
-                pattern.parse::<u32>(),
-                Errors::SelfExpressionXNotNumber {
-                    position,
-                    expression: pattern.to_owned(),
-                }
-            );
-            (content, content + 1)
-        };
-
-        Ok((start..end)
-            .flat_map(|x| function_args.get(x as usize).cloned())
-            .collect())
-    }
+        })
+        .collect()
 }
 
 fn execute_function(
     function_code: &[Stage3Token],
     arguments: &[Stage3Token],
     context: &mut Context,
-    function_data: &[Number],
+    function_data: &Vec<Value>,
     integer: &mut u64,
 ) -> CompilerResult {
-    let args: Vec<Number> = arguments
+    let args: Vec<Value> = arguments
         .iter()
         .map(|y| context.execute(y, function_data, integer))
         .collect::<Result<Vec<_>, _>>()?
         .into_iter()
         .flatten()
-        .collect::<Vec<Number>>();
+        .collect::<Vec<Value>>();
     Ok(function_code
         .iter()
         .map(|x| context.execute(x, &args, integer))
