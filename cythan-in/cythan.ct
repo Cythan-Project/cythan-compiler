@@ -1,2 +1,69 @@
-test = (0)
-test
+'start
+0 0 0 0 0 0 0 0 0 # you can test number from 0 to 9
+# Default pointor
+'#0:0
+'#1:1
+'#2:2
+'#3:3
+'#4:4
+'#5:5
+'#6:6
+'#7:7
+'#8:8
+'#9:9
+# return value from functions
+'#return_0:0
+'#return_1:0
+'#return_2:0
+'#return_3:0
+'#return_4:0
+'#return_5:0
+'#return_6:0
+'#return_7:0
+'#return_8:0
+'#return_9:0
+
+no_op = (0 0)
+earasable = (999)
+
+switch { # self.0 = case to test, match self.1 => self.2, self.2 => self.3
+    self.0 'test self.1.. 0 'test:earasable
+}
+
+stop {~+2 0 ~-2} # if you sure pointeur isn't missplaced
+sure_stop { ~+2 0 ~-2 ~+2 0 ~-2} # stop even if pointor misplaced by one
+
+
+
+jump { ~+2 0 self.0 } # jump to self.0
+ # jump to self.0 even if pointor misplaced by one
+sure_jump {
+    ~+3 ~+2 0 self.0
+}
+# recenter the pointor if misplaced
+sure {}
+
+
+add_4b {
+    
+    # --- data ---
+    
+    'inputA0:self.0
+    'inputA1:self.1
+    'inputA2:self.2
+    'inputA3:self.3
+    'inputA4:2
+    
+    'inputB0:self.4
+    'inputB1:self.5
+    'inputB2:self.6
+    'inputB3:self.7
+    
+    'retenue:self.8
+    
+    
+}
+
+'start:no_op
+
+sure_stop()

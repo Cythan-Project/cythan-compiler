@@ -1,3 +1,10 @@
 
-test = (0)
-test
+test = (Expression { labels: {}, instruction: Value(0) } Expression { labels: {}, instruction: Value(10) } Expression { labels: {}, instruction: Value(1) })
+
+test {
+    Expression { labels: {}, instruction: Variable("self", Some(Range { start: 0, end: Some(1), or: Some(Value(1)) })) }
+    Expression { labels: {}, instruction: Value(10) }
+    a = (Expression { labels: {}, instruction: Variable("test", None) })
+    Expression { labels: {}, instruction: Variable("a", None) }
+}}
+test(Expression { labels: {}, instruction: Value(0) } Expression { labels: {}, instruction: Value(10) } Expression { labels: {}, instruction: Value(1) })

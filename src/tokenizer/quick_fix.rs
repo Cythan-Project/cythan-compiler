@@ -1,14 +1,16 @@
 use super::stage1::Position;
 
+#[derive(Clone, Debug)]
 pub struct QuickFix {
     pub placement: QuickFixPosition,
     pub position: Position,
     pub text: String,
 }
 
+#[derive(Clone, Debug)]
 pub enum QuickFixPosition {
-    BEFORE,
-    AFTER,
-    REPLACE,
-    REPLACE_FIRST(usize),
+    Before,
+    After,
+    Replace,
+    ReplaceFirst(usize),
 }

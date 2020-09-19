@@ -1,6 +1,8 @@
+use super::value::Expression;
+
 #[derive(Debug, Clone)]
 pub enum Stage3Token {
-    Executable(Position, String),
+    Executable(Position, Expression),
     FunctionExecution(Position, String, Vec<Stage3Token>),
     FunctionCreation(Position, String, Vec<Stage3Token>),
     VariableDefinition(Position, String, Vec<Stage3Token>),
@@ -46,7 +48,7 @@ pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Stage3Token>, Errors> {
                 if was_litteral {
                     output.push(Stage3Token::Executable(
                         literal_caret.expect("B").clone(),
-                        litteral,
+                        Expression::from_string(&litteral, literal_caret.expect("B"))?,
                     ));
                 }
                 was_litteral = true;
@@ -108,7 +110,7 @@ pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Stage3Token>, Errors> {
                 if was_litteral {
                     output.push(Stage3Token::Executable(
                         literal_caret.expect("H").clone(),
-                        litteral,
+                        Expression::from_string(&litteral, literal_caret.expect("B"))?,
                     ));
                     was_litteral = false;
                 }
@@ -120,7 +122,7 @@ pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Stage3Token>, Errors> {
     if was_litteral {
         output.push(Stage3Token::Executable(
             literal_caret.expect("I").clone(),
-            litteral,
+            Expression::from_string(&litteral, literal_caret.expect("B"))?,
         ));
     }
     Ok(output)
@@ -129,7 +131,7 @@ pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Stage3Token>, Errors> {
 impl Stage3Token {
     pub fn to_string(&self) -> Vec<String> {
         match self {
-            Self::Executable(_, e) => vec![e.to_owned()],
+            Self::Executable(_, e) => vec![format!("{:?}", e)],
             Self::FunctionCreation(_, e, c) => {
                 let mut v = Vec::new();
                 v.push(String::new());

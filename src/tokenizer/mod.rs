@@ -4,6 +4,7 @@ pub mod quick_fix;
 mod stage1;
 mod stage2;
 mod stage3;
+mod value;
 
 use errors::Errors;
 
