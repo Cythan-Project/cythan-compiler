@@ -1,4 +1,3 @@
-use super::stage1::Position;
 use super::stage3::Stage3Token;
 use std::collections::HashMap;
 
@@ -26,17 +25,17 @@ impl Context {
     pub fn execute(
         &mut self,
         token: &Stage3Token,
-        function_data: &Vec<Value>,
+        function_data: &[Value],
         current_int: &mut u64,
     ) -> CompilerResult {
         match token {
-            Stage3Token::FunctionCreation(position, name, code) => {
+            Stage3Token::FunctionCreation(_position, name, code) => {
                 self.functions.insert(name.to_owned(), code.clone());
                 Ok(Vec::new())
             }
             Stage3Token::FunctionExecution(position, name, args) => {
-                let (fnname, label) = if name.starts_with("'") && name.contains(":") {
-                    let mut iter = name.split(":");
+                let (fnname, label) = if name.starts_with('\'') && name.contains(':') {
+                    let mut iter = name.split(':');
                     let label = iter.next().unwrap();
 
                     (
@@ -68,7 +67,7 @@ impl Context {
                 }
                 Ok(out)
             }
-            Stage3Token::VariableDefinition(position, name, value) => {
+            Stage3Token::VariableDefinition(_position, name, value) => {
                 let result = value
                     .iter()
                     .map(|x| self.execute(x, function_data, current_int))
@@ -77,8 +76,8 @@ impl Context {
                     .insert(name.to_owned(), result.into_iter().flatten().collect());
                 Ok(vec![])
             }
-            Stage3Token::Executable(position, name) => {
-                Ok(name.clone().execute(&self.variables, function_data))
+            Stage3Token::Executable(_position, name) => {
+                name.clone().execute(&self.variables, function_data)
             }
         }
     }
@@ -94,76 +93,16 @@ impl Context {
             .into_iter()
             .flatten()
             .collect::<Vec<Value>>();
-        Ok(list
-            .iter()
+        list.iter()
             .enumerate()
-            .map(|(i, x)| x.compute_value(i, &mut labels, &list))
-            .collect::<Vec<usize>>())
+            .map(|(i, x)| {
+                let o = x.compute_value(i, &labels, &list);
+                x.update_labels(i, &mut labels);
+                o
+            })
+            .collect::<Result<Vec<usize>, _>>()
     }
 }
-// Variable
-// Pattern contenant une variable
-// Pattern
-/*fn get_value(
-    literal: &str,
-    variables: &HashMap<String, Vec<Value>>,
-    function_args: &Vec<Value>,
-    position: Position,
-) -> CompilerResult {
-    if literal.contains(':')
-        && literal.starts_with('\'')
-        && !literal.contains('+')
-        && !literal.contains('-')
-    {
-        if let Some(e) = Value::from_str(literal, position.clone()) {
-            Ok(vec![e])
-        } else {
-            let mut iter = literal.split(':');
-            let label = iter.next().unwrap();
-            let label = label[1..label.len()].to_owned();
-            let variable = iter.next().unwrap();
-            if let Some(mut e) = get_var(function_args, variable, variables, position.clone())? {
-                if e.is_empty() {
-                    Err(Errors::EmptyVariable {
-                        position,
-                        varname: variable.to_owned(),
-                    })
-                } else {
-                    e[0] = e[0].labelize(label);
-                    Ok(e)
-                }
-            } else {
-                Err(Errors::UndefinedVariable {
-                    position,
-                    varname: variable.to_owned(),
-                })
-            }
-        }
-    } else if !literal.contains(':')
-        && !literal.starts_with('\'')
-        && !literal.contains('+')
-        && !literal.contains('-')
-    {
-        if let Some(e) = Number::from_str(literal, position.clone()) {
-            Ok(vec![e])
-        } else if let Some(e) = get_var(function_args, literal, variables, position.clone())? {
-            Ok(e)
-        } else {
-            Err(Errors::VariableNotFound {
-                position,
-                variable_names: variables.keys().cloned().collect(),
-                variable_name: literal.to_owned(),
-            })
-        }
-    } else if let Some(e) = Number::from_str(literal, position.clone()) {
-        Ok(vec![e])
-    } else {
-        Err(Errors::UnableToReadLitteral {
-            position,
-            litteral: literal.to_owned(),
-        })
-    }
-}*/
 
 fn rename_labels(code: Vec<Value>, current_int: &mut u64) -> Vec<Value> {
     let mut labels: HashMap<String, String> = HashMap::new();
@@ -171,14 +110,14 @@ fn rename_labels(code: Vec<Value>, current_int: &mut u64) -> Vec<Value> {
     code.into_iter()
         .map(|mut x| {
             match &mut x {
-                Value::Label(lbls, label, _) => {
+                Value::Label(lbls, label, _, _) => {
                     try_rename_string(label, current_int, &mut labels);
                     *lbls = remap_labels(&lbls, current_int, &mut labels);
                 }
-                Value::Absolute(lbls, _) => {
+                Value::Absolute(lbls, _, _) => {
                     *lbls = remap_labels(&lbls, current_int, &mut labels);
                 }
-                Value::Relative(lbls, _) => {
+                Value::Relative(lbls, _, _) => {
                     *lbls = remap_labels(&lbls, current_int, &mut labels);
                 }
             }
@@ -233,7 +172,7 @@ fn execute_function(
     function_code: &[Stage3Token],
     arguments: &[Stage3Token],
     context: &mut Context,
-    function_data: &Vec<Value>,
+    function_data: &[Value],
     integer: &mut u64,
 ) -> CompilerResult {
     let args: Vec<Value> = arguments

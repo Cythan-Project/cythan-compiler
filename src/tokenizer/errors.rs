@@ -69,6 +69,10 @@ pub enum Errors {
         assignement2: String,
         position: Position,
     },
+    ExpressionCompilingError {
+        expression: String,
+        position: Position,
+    },
 }
 
 impl std::fmt::Debug for Errors {
@@ -87,9 +91,17 @@ impl Errors {
     pub fn to_pretty_print(&self) -> String {
         let mut out = String::new();
         match self {
+            Self::ExpressionCompilingError {
+                expression,
+                position,
+            } => {
+                out.push_str(&position.to_str());
+                out.push_str("\r\n");
+                out.push_str(&format!("Can't compile expression: `{}`", expression));
+            }
             Errors::FunctionNotFound {
                 position,
-                function_names,
+                function_names: _function_names,
                 function_name,
             } => {
                 out.push_str(&position.to_str());
@@ -104,7 +116,7 @@ impl Errors {
             }
             Errors::VariableNotFound {
                 position,
-                variable_names,
+                variable_names: _,
                 variable_name,
             } => {
                 out.push_str(&position.to_str());
@@ -121,7 +133,7 @@ impl Errors {
             }
             Errors::LabelNotFound {
                 position,
-                label_names,
+                label_names: _,
                 label_name,
             } => {
                 out.push_str(&position.to_str());
@@ -261,8 +273,7 @@ impl Errors {
                 out.push_str(&format!(" {} {{\r\n", &assignement));
                 out.push_str("Block example:\r\n");
                 out.push_str("test {\r\n");
-                out.push_str(" 0 5 6 self\r\n");
-                out.push_str("}");
+                out.push_str(" 0 5 6 self\r\n}");
             }
             Errors::BlockMustBePrecededByLiteral { position } => {
                 out.push_str(&position.to_str());
@@ -271,8 +282,7 @@ impl Errors {
                 out.push_str("Please add a name to the block\r\n");
                 out.push_str("Block example:\r\n");
                 out.push_str("test {\r\n");
-                out.push_str(" 0 5 6 self\r\n");
-                out.push_str("}");
+                out.push_str(" 0 5 6 self\r\n}");
             }
             Errors::ParenthesisNotInAssignementOrFunctionCall { position } => {
                 out.push_str(&position.to_str());
@@ -315,7 +325,7 @@ impl Errors {
                 for i in get_similars(variable_name, variable_names) {
                     fixes.push(QuickFix {
                         position: position.clone(),
-                        placement: QuickFixPosition::REPLACE_FIRST(variable_name.len()),
+                        placement: QuickFixPosition::ReplaceFirst(variable_name.len()),
                         text: i.to_owned(),
                     })
                 }
@@ -328,7 +338,7 @@ impl Errors {
                 for i in get_similars(function_name, function_names) {
                     fixes.push(QuickFix {
                         position: position.clone(),
-                        placement: QuickFixPosition::REPLACE_FIRST(function_name.len()),
+                        placement: QuickFixPosition::ReplaceFirst(function_name.len()),
                         text: i.to_owned(),
                     })
                 }
@@ -341,7 +351,7 @@ impl Errors {
                 for i in get_similars(label_name, label_names) {
                     fixes.push(QuickFix {
                         position: position.clone(),
-                        placement: QuickFixPosition::REPLACE_FIRST(label_name.len()),
+                        placement: QuickFixPosition::ReplaceFirst(label_name.len()),
                         text: i.to_owned(),
                     })
                 }
@@ -354,19 +364,19 @@ impl Errors {
 
 #[test]
 pub fn test_simmilar() {
-    println!(
-        "{:?}",
+    assert_eq!(
         get_similars(
             "test",
-            &vec![
+            &[
                 "tast".to_owned(),
                 "re1".to_owned(),
                 "testAc".to_owned(),
                 "voirie".to_owned(),
                 "chucktesta".to_owned()
             ]
-        )
-    );
+        ),
+        ["tast", "testAc"]
+    )
 }
 
 pub fn get_similars(input: &str, discriminant: &[String]) -> Vec<String> {

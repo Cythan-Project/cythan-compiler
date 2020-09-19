@@ -57,19 +57,25 @@ impl Position {
     }
 
     pub fn merge(&self, position: &Position) -> Self {
-        let (line_from, caret_from) = if self.line_from < position.line_from {
-            (self.line_from, self.caret_from)
-        } else if self.line_from == position.line_from {
-            (self.line_from, self.caret_from.min(position.caret_from))
-        } else {
-            (position.line_from, self.caret_from)
+        use std::cmp::Ordering;
+
+        let (line_from, caret_from) = match self
+            .line_from
+            .partial_cmp(&position.line_from)
+            .expect("I don't like NaNs")
+        {
+            Ordering::Less => (self.line_from, self.caret_from),
+            Ordering::Greater => (position.line_from, self.caret_from),
+            Ordering::Equal => (self.line_from, self.caret_from.min(position.caret_from)),
         };
-        let (line_to, caret_to) = if self.line_to > position.line_to {
-            (self.line_to, self.caret_to)
-        } else if self.line_to == position.line_to {
-            (self.line_to, self.caret_to.max(position.caret_to))
-        } else {
-            (position.line_to, self.caret_to)
+        let (line_to, caret_to) = match self
+            .line_to
+            .partial_cmp(&position.line_to)
+            .expect("I don't like NaNs")
+        {
+            Ordering::Less => (position.line_to, self.caret_to),
+            Ordering::Greater => (self.line_to, self.caret_to),
+            Ordering::Equal => (self.line_to, self.caret_to.max(position.caret_to)),
         };
         Self {
             line_from,
@@ -96,185 +102,19 @@ pub fn compile(line: &str, line_number: usize) -> Vec<Stage1Token> {
         if t == "#" {
             break;
         }
-        out.push(
-            /*if t == "fn" {
-                Stage1Token::KeywordFn
-            } else */
-            if t == "(" {
-                Stage1Token::OpenParenthesis(Position::new(line_number, from, to))
-            } else if t == ")" {
-                Stage1Token::CloseParenthesis(Position::new(line_number, from, to))
-            } else if t == "{" {
-                Stage1Token::OpenBrackets(Position::new(line_number, from, to))
-            } else if t == "}" {
-                Stage1Token::CloseBrackets(Position::new(line_number, from, to))
-            } else if t == "=" {
-                Stage1Token::Equals(Position::new(line_number, from, to))
-            } else {
-                Stage1Token::Literal(Position::new(line_number, from, to), t)
-            },
-        );
+        out.push(if t == "(" {
+            Stage1Token::OpenParenthesis(Position::new(line_number, from, to))
+        } else if t == ")" {
+            Stage1Token::CloseParenthesis(Position::new(line_number, from, to))
+        } else if t == "{" {
+            Stage1Token::OpenBrackets(Position::new(line_number, from, to))
+        } else if t == "}" {
+            Stage1Token::CloseBrackets(Position::new(line_number, from, to))
+        } else if t == "=" {
+            Stage1Token::Equals(Position::new(line_number, from, to))
+        } else {
+            Stage1Token::Literal(Position::new(line_number, from, to), t)
+        });
     }
     out
 }
-
-/*#[derive(Clone, Debug)]
-pub enum Number {
-    Plain(InnerNumber),
-    Add(InnerNumber, isize),
-    PointerDefine(String, InnerNumber),
-    PointerDefineAndAdd(String, InnerNumber, isize),
-}
-
-fn text_to_added_number(s: &str, position: Position) -> Option<(InnerNumber, isize)> {
-    if s.contains('+') {
-        let mut iter = s.split('+');
-        Some((
-            InnerNumber::from_str(iter.next().unwrap(), position)?,
-            iter.next().map(|x| x.parse::<isize>().ok()).flatten()?,
-        ))
-    } else if s.contains('-') {
-        let mut iter = s.split('-');
-        Some((
-            InnerNumber::from_str(iter.next().unwrap(), position)?,
-            -iter.next().map(|x| x.parse::<isize>().ok()).flatten()?,
-        ))
-    } else {
-        None
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum InnerNumber {
-    Current(Position),                  // Tilde
-    PointerReference(Position, String), // Pointer String,
-    Number(Position, usize),            // Number
-}
-
-use super::errors::Errors;
-
-impl Number {
-    pub fn get_as_label(&self) -> Option<&str> {
-        match self {
-            Self::PointerDefine(pointer, _) => Some(pointer),
-            Self::PointerDefineAndAdd(pointer, _, _) => Some(pointer),
-            _ => None,
-        }
-    }
-
-    pub fn labelize(&self, label: String) -> Self {
-        match self {
-            Number::Plain(e) => Number::PointerDefine(label, e.clone()),
-            Number::Add(e, number) => Number::PointerDefineAndAdd(label, e.clone(), *number),
-            Number::PointerDefine(label, e) => Number::PointerDefine(label.to_owned(), e.clone()),
-            Number::PointerDefineAndAdd(label, e, g) => {
-                Number::PointerDefineAndAdd(label.to_owned(), e.clone(), *g)
-            }
-        }
-    }
-
-    pub fn get_value(
-        &self,
-        current: usize,
-        labels: &mut HashMap<String, u32>,
-        tokens: &Vec<Number>,
-    ) -> Result<u32, Errors> {
-        Ok(match self {
-            Self::Add(e, i) => (e.get_value(current, labels, tokens)? as isize + i) as u32,
-            Self::Plain(e) => e.get_value(current, labels, tokens)?,
-            Self::PointerDefine(name, e) => {
-                labels.insert(name.to_owned(), current as u32);
-                e.get_value(current, labels, tokens)?
-            }
-            Self::PointerDefineAndAdd(name, e, i) => {
-                labels.insert(name.to_owned(), current as u32);
-                (e.get_value(current, labels, tokens)? as isize + i) as u32
-            }
-        })
-    }
-
-    pub fn from_str(value: &str, position: Position) -> Option<Self> {
-        if value.starts_with('\'') && value.contains(':') {
-            // Pointer Define or Pointer and add
-
-            let mut iter = value.split(':');
-
-            let name = iter.next().unwrap();
-            let name = name[1..name.len()].to_owned();
-
-            let text = iter.next().unwrap();
-
-            if value.contains('+') || value.contains('-') {
-                if let Some((e, e2)) = text_to_added_number(text, position) {
-                    Some(Number::PointerDefineAndAdd(name, e, e2))
-                } else {
-                    None
-                }
-            } else {
-                Some(Number::PointerDefine(
-                    name,
-                    InnerNumber::from_str(text, position)?,
-                ))
-            }
-        } else if value.contains('+') || value.contains('-') {
-            if let Some((e, e2)) = text_to_added_number(value, position) {
-                Some(Number::Add(e, e2))
-            } else {
-                None
-            }
-        } else {
-            Some(Number::Plain(InnerNumber::from_str(value, position)?))
-        }
-    }
-}
-
-use std::collections::HashMap;
-
-impl InnerNumber {
-    pub fn get_value(
-        &self,
-        current: usize,
-        labels: &HashMap<String, u32>,
-        tokens: &Vec<Number>,
-    ) -> Result<u32, Errors> {
-        match self {
-            Self::Current(_) => Ok(current as u32),
-            Self::Number(_, e) => Ok(*e as u32),
-            Self::PointerReference(position, e) => {
-                if let Some(e) = labels.get(e) {
-                    Ok(*e)
-                } else if let Some(e) = tokens.iter().skip(current).position(|x| {
-                    if let Some(tmp_e) = x.get_as_label() {
-                        tmp_e == e
-                    } else {
-                        false
-                    }
-                }) {
-                    Ok(e as u32)
-                } else {
-                    Err(Errors::LabelNotFound {
-                        position: position.clone(),
-                        label_names: labels.keys().cloned().collect(),
-                        label_name: e.to_owned(),
-                    })
-                }
-            }
-        }
-    }
-
-    fn from_str(value: &str, position: Position) -> Option<Self> {
-        if value.starts_with('\'') {
-            Some(InnerNumber::PointerReference(
-                position,
-                value[1..value.len()].to_owned(),
-            ))
-        } else if value == "~" {
-            Some(InnerNumber::Current(position))
-        } else {
-            value
-                .parse::<usize>()
-                .map(|x| InnerNumber::Number(position, x))
-                .ok()
-        }
-    }
-}*/

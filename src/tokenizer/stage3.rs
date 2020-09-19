@@ -1,4 +1,4 @@
-use super::value::{Expression, Value};
+use super::value::Expression;
 
 #[derive(Debug, Clone)]
 pub enum Stage3Token {
@@ -48,7 +48,7 @@ pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Stage3Token>, Errors> {
                 if was_litteral {
                     output.push(Stage3Token::Executable(
                         literal_caret.expect("B").clone(),
-                        Expression::from_string(&litteral),
+                        Expression::from_string(&litteral, literal_caret.expect("B"))?,
                     ));
                 }
                 was_litteral = true;
@@ -110,7 +110,7 @@ pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Stage3Token>, Errors> {
                 if was_litteral {
                     output.push(Stage3Token::Executable(
                         literal_caret.expect("H").clone(),
-                        Expression::from_string(&litteral),
+                        Expression::from_string(&litteral, literal_caret.expect("B"))?,
                     ));
                     was_litteral = false;
                 }
@@ -122,7 +122,7 @@ pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Stage3Token>, Errors> {
     if was_litteral {
         output.push(Stage3Token::Executable(
             literal_caret.expect("I").clone(),
-            Expression::from_string(&litteral),
+            Expression::from_string(&litteral, literal_caret.expect("B"))?,
         ));
     }
     Ok(output)

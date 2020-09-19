@@ -37,7 +37,7 @@ enum CompilationToken {
     Phase2Token(Phase2Token),
 }
 
-fn compile(literal: &str) -> Vec<CompilationToken> {
+fn compile(literal: &str, position: &Position) -> Result<Vec<CompilationToken>, Errors> {
     let tokens = FilteredTokenizer::new(LiteralCompiler {}, literal).collect::<Vec<Token>>();
     let mut output: Vec<CompilationToken> = Vec::new();
     for token in tokens {
@@ -57,7 +57,11 @@ fn compile(literal: &str) -> Vec<CompilationToken> {
                         )));
                         continue;
                     } else {
-                        panic!("A range must have a number before it! example: 0..")
+                        return Err(Errors::SelfExpressionMissingNumber {
+                            expression: literal.to_owned(),
+                            position: position.clone(),
+                        });
+                        // panic!("A range must have a number before it! example: 0..")
                     }
                 }
                 Some(CompilationToken::Phase2Token(Phase2Token::Variable(_))) => {
@@ -66,7 +70,11 @@ fn compile(literal: &str) -> Vec<CompilationToken> {
                     {
                         n
                     } else {
-                        unreachable!();
+                        println!("Zone17");
+                        return Err(Errors::ExpressionCompilingError {
+                            expression: literal.to_owned(),
+                            position: position.clone(),
+                        });
                     };
                     output.push(CompilationToken::Phase2Token(Phase2Token::VariableIndexed(
                         n,
@@ -79,21 +87,31 @@ fn compile(literal: &str) -> Vec<CompilationToken> {
             }
         } else if t == ":" {
             match output.last() {
+                // TODO: Check why is added is not used and if it is normal
                 Some(CompilationToken::Phase2Token(Phase2Token::Label(_, _))) => {
-                    let (label, added) =
+                    let (label, _added) =
                         if let CompilationToken::Phase2Token(Phase2Token::Label(label, added)) =
                             output.pop().unwrap()
                         {
                             (label, added)
                         } else {
-                            unreachable!();
+                            println!("Zone1");
+                            return Err(Errors::ExpressionCompilingError {
+                                expression: literal.to_owned(),
+                                position: position.clone(),
+                            });
                         };
                     output.push(CompilationToken::Phase2Token(Phase2Token::LabelAssign(
                         label,
                     )));
                 }
                 _ => {
-                    println!("Synthax error : can't be placed before elsewhere than <label>:");
+                    println!("Zone2");
+                    return Err(Errors::ExpressionCompilingError {
+                        expression: literal.to_owned(),
+                        position: position.clone(),
+                    });
+                    //println!("Synthax error : can't be placed before elsewhere than <label>:");
                 }
             }
         } else if t == "~" {
@@ -141,7 +159,11 @@ fn compile(literal: &str) -> Vec<CompilationToken> {
                             {
                                 (label, added)
                             } else {
-                                unreachable!();
+                                println!("Zone3");
+                                return Err(Errors::ExpressionCompilingError {
+                                    expression: literal.to_owned(),
+                                    position: position.clone(),
+                                });
                             };
                             output.push(CompilationToken::Phase2Token(Phase2Token::Label(
                                 label,
@@ -159,7 +181,11 @@ fn compile(literal: &str) -> Vec<CompilationToken> {
                             {
                                 (label, added)
                             } else {
-                                unreachable!();
+                                println!("Zone4");
+                                return Err(Errors::ExpressionCompilingError {
+                                    expression: literal.to_owned(),
+                                    position: position.clone(),
+                                });
                             };
                             output.push(CompilationToken::Phase2Token(Phase2Token::OrLabel(
                                 label,
@@ -186,8 +212,12 @@ fn compile(literal: &str) -> Vec<CompilationToken> {
                                 Some(end.unwrap_or(0) + number as isize),
                             )));
                         }
-                        e => {
-                            panic!("Invalid number pattern! {:?}", e);
+                        _ => {
+                            println!("Zone5");
+                            return Err(Errors::ExpressionCompilingError {
+                                expression: literal.to_owned(),
+                                position: position.clone(),
+                            });
                         }
                     }
                 }
@@ -195,14 +225,21 @@ fn compile(literal: &str) -> Vec<CompilationToken> {
                     .push(CompilationToken::Phase2Token(Phase2Token::Number(
                         number as isize,
                     ))),
+                Some(CompilationToken::Phase2Token(Phase2Token::LabelAssign(_))) => output.push(
+                    CompilationToken::Phase2Token(Phase2Token::Number(number as isize)),
+                ),
                 None => output.push(CompilationToken::Phase2Token(Phase2Token::Number(
                     number as isize,
                 ))),
-                e => {
-                    panic!("Unreachable pattern reached : {:?}", e);
+                _ => {
+                    println!("Zone6");
+                    return Err(Errors::ExpressionCompilingError {
+                        expression: literal.to_owned(),
+                        position: position.clone(),
+                    });
                 }
             }
-        } else if t.starts_with("'") {
+        } else if t.starts_with('\'') {
             let t = t[1..t.len()].to_owned();
             if let Some(CompilationToken::Phase1Token(Phase1Token::QuestionMark)) = output.last() {
                 output.pop();
@@ -214,12 +251,12 @@ fn compile(literal: &str) -> Vec<CompilationToken> {
             output.push(CompilationToken::Phase2Token(Phase2Token::Variable(t)));
         }
     }
-    output
+    Ok(output)
 }
-
+/*
 #[test]
 pub fn test_value() {
-    /*let tests = vec![
+    let tests = vec![
         "~+1",
         "~-1",
         "'label:~+1",
@@ -252,33 +289,49 @@ pub fn test_value() {
     ];
     for i in tests {
         println!("{}: {:?}", i, Expression::from_string(i));
-    }*/
+    }
 }
+*/
 
 #[derive(Debug, Clone)]
 pub struct Expression {
     labels: HashSet<String>,
     instruction: Instruction,
+    position: Position,
+    expression: String,
 }
 
+use super::errors::Errors;
+use super::stage1::Position;
+
 impl Expression {
-    pub fn from_string(string: &str) -> Self {
+    pub fn from_string(string: &str, position: &Position) -> Result<Self, Errors> {
         Self::from_stage2(
-            &compile(string)
+            &compile(string, position)?
                 .into_iter()
                 .flat_map(|e| {
                     if let CompilationToken::Phase2Token(a) = e {
-                        Some(a)
+                        Some(Ok(a))
                     } else {
-                        panic!("None: {:?}", e);
+                        println!("Zone7");
+                        Some(Err(Errors::ExpressionCompilingError {
+                            position: position.clone(),
+                            expression: string.to_owned(),
+                        }))
                     }
                 })
-                .collect(),
+                .collect::<Result<Vec<_>, _>>()?,
+            string,
+            position,
         )
     }
 
-    fn from_stage2(tokens: &Vec<Phase2Token>) -> Self {
-        Self {
+    fn from_stage2(
+        tokens: &[Phase2Token],
+        string: &str,
+        position: &Position,
+    ) -> Result<Self, Errors> {
+        Ok(Self {
             labels: tokens
                 .iter()
                 .flat_map(|x| {
@@ -289,8 +342,10 @@ impl Expression {
                     }
                 })
                 .collect(),
-            instruction: Instruction::from_stage2(tokens),
-        }
+            instruction: Instruction::from_stage2(tokens, string, position)?,
+            expression: string.to_owned(),
+            position: position.clone(),
+        })
     }
 }
 
@@ -303,12 +358,22 @@ enum Instruction {
 }
 
 impl Instruction {
-    fn from_stage2(tokens: &[Phase2Token]) -> Self {
+    fn from_stage2(
+        tokens: &[Phase2Token],
+        expression: &str,
+        position: &Position,
+    ) -> Result<Self, Errors> {
         let mut labels: Vec<&Phase2Token> = tokens
             .iter()
             .filter(|x| !matches!(x, Phase2Token::LabelAssign(_)))
             .collect();
-        match labels.remove(0) {
+        if labels.is_empty() {
+            panic!(
+                "FATAL ERROR HOW AN EXPRESSION CAN HAVE NULL PARAMS {:?}",
+                tokens
+            );
+        }
+        Ok(match labels.remove(0) {
             Phase2Token::Label(string, added) => Self::Label(string.to_owned(), *added),
             Phase2Token::Number(number) => Self::Value(*number as usize),
             Phase2Token::Relative(number) => Self::Relative(*number),
@@ -333,13 +398,23 @@ impl Instruction {
                                 or: Some(DefaultValue::Label(label.to_owned(), *added)),
                             }),
                         ),
-                        _ => unreachable!(),
+                        _ => {
+                            println!("Zone8");
+                            return Err(Errors::ExpressionCompilingError {
+                                position: position.clone(),
+                                expression: expression.to_owned(),
+                            });
+                        }
                     }
                 }
             }
             Phase2Token::VariableIndexed(variable) => {
                 if labels.is_empty() {
-                    unreachable!()
+                    println!("Zone9");
+                    return Err(Errors::ExpressionCompilingError {
+                        position: position.clone(),
+                        expression: expression.to_owned(),
+                    });
                 } else {
                     match labels.remove(0) {
                         Phase2Token::Range(start, end) => {
@@ -370,7 +445,13 @@ impl Instruction {
                                             or: Some(DefaultValue::Label(label.to_owned(), *added)),
                                         }),
                                     ),
-                                    _ => unreachable!(),
+                                    _ => {
+                                        println!("Zone10");
+                                        return Err(Errors::ExpressionCompilingError {
+                                            expression: expression.to_owned(),
+                                            position: position.clone(),
+                                        });
+                                    }
                                 }
                             }
                         }
@@ -402,18 +483,34 @@ impl Instruction {
                                             or: Some(DefaultValue::Label(label.to_owned(), *added)),
                                         }),
                                     ),
-                                    _ => unreachable!(),
+                                    _ => {
+                                        println!("Zone11");
+                                        return Err(Errors::ExpressionCompilingError {
+                                            position: position.clone(),
+                                            expression: expression.to_owned(),
+                                        });
+                                    }
                                 }
                             }
                         }
-                        _ => unreachable!(),
+                        _ => {
+                            println!("Zone12");
+                            return Err(Errors::ExpressionCompilingError {
+                                position: position.clone(),
+                                expression: expression.to_owned(),
+                            });
+                        }
                     }
                 }
             }
             _ => {
-                unreachable!();
+                println!("Zone13");
+                return Err(Errors::ExpressionCompilingError {
+                    position: position.clone(),
+                    expression: expression.to_owned(),
+                });
             }
-        }
+        })
     }
 }
 
@@ -421,19 +518,27 @@ impl Expression {
     pub fn execute(
         self,
         vars: &HashMap<String, Vec<Value>>,
-        function_data: &Vec<Value>,
-    ) -> Vec<Value> {
-        match self.instruction {
-            Instruction::Label(name, added) => vec![Value::Label(self.labels, name, added)],
-            Instruction::Relative(added) => vec![Value::Relative(self.labels, added)],
-            Instruction::Value(value) => vec![Value::Absolute(self.labels, value)],
+        function_data: &[Value],
+    ) -> Result<Vec<Value>, Errors> {
+        Ok(match self.instruction {
+            Instruction::Label(name, added) => {
+                vec![Value::Label(self.labels, name, added, self.position)]
+            }
+            Instruction::Relative(added) => {
+                vec![Value::Relative(self.labels, added, self.position)]
+            }
+            Instruction::Value(value) => vec![Value::Absolute(self.labels, value, self.position)],
             Instruction::Variable(name, range) => {
                 let variable = if let Some(e) = vars.get(&name) {
                     e
                 } else if name == "self" {
                     function_data
                 } else {
-                    panic!("variable {:?} not found", name);
+                    return Err(Errors::VariableNotFound {
+                        variable_name: name,
+                        variable_names: vars.keys().cloned().collect(),
+                        position: self.position,
+                    });
                 };
                 match range {
                     Some(e) => {
@@ -444,13 +549,13 @@ impl Expression {
                         variable
                     }
                     None => {
-                        let mut variable: Vec<Value> = variable.clone();
+                        let mut variable: Vec<Value> = variable.to_vec();
                         variable[0].add_labels(self.labels);
                         variable
                     }
                 }
             }
-        }
+        })
     }
 }
 
@@ -462,7 +567,7 @@ struct Range {
 }
 
 impl Range {
-    fn generate(&self, variable: &Vec<Value>) -> Vec<Value> {
+    fn generate(&self, variable: &[Value]) -> Vec<Value> {
         if let Some(end) = self.end {
             assert_eq!(
                 self.start < end,
@@ -489,9 +594,9 @@ enum DefaultValue {
 
 #[derive(Clone, Debug)]
 pub enum Value {
-    Relative(HashSet<String>, isize),
-    Absolute(HashSet<String>, usize),
-    Label(HashSet<String>, String, isize),
+    Relative(HashSet<String>, isize, Position),
+    Absolute(HashSet<String>, usize, Position),
+    Label(HashSet<String>, String, isize, Position),
 }
 
 use std::collections::{HashMap, HashSet};
@@ -499,12 +604,12 @@ use std::collections::{HashMap, HashSet};
 impl Value {
     fn get_labels(&self) -> &HashSet<String> {
         match self {
-            Self::Relative(a, _) | Self::Absolute(a, _) | Self::Label(a, _, _) => a,
+            Self::Relative(a, _, _) | Self::Absolute(a, _, _) | Self::Label(a, _, _, _) => a,
         }
     }
     pub fn add_labels(&mut self, labels: HashSet<String>) {
         match self {
-            Self::Relative(a, _) | Self::Absolute(a, _) | Self::Label(a, _, _) => {
+            Self::Relative(a, _, _) | Self::Absolute(a, _, _) | Self::Label(a, _, _, _) => {
                 a.extend(labels);
             }
         }
@@ -523,12 +628,12 @@ impl Value {
         &self,
         current_index: usize,
         labels: &HashMap<String, usize>,
-        other_values: &Vec<Value>,
-    ) -> usize {
-        match self {
-            Self::Relative(_, a) => (a + current_index as isize) as usize,
-            Self::Absolute(_, a) => *a,
-            Self::Label(_, a, i) => {
+        other_values: &[Value],
+    ) -> Result<usize, Errors> {
+        Ok(match self {
+            Self::Relative(_, a, _) => (a + current_index as isize) as usize,
+            Self::Absolute(_, a, _) => *a,
+            Self::Label(_, a, i, pos) => {
                 if let Some(e) = labels.get(a) {
                     *e
                 } else if let Some(e) = other_values
@@ -538,28 +643,13 @@ impl Value {
                 {
                     (e as isize + i) as usize
                 } else {
-                    panic!("Can't get label {:?}", a)
+                    return Err(Errors::LabelNotFound {
+                        label_name: a.to_owned(),
+                        label_names: labels.keys().cloned().collect(),
+                        position: pos.clone(),
+                    });
                 }
             }
-        }
+        })
     }
 }
-
-/*
-expression:
-    Vec<String>: labels_to_define
-
-instruction:
-    Variable {
-        name: String,
-        range: Option<Range>
-    }
-Range:
-    start: usize
-    end: Option<usize>
-    or: Option<DefaultValue>
-DefaultValue:
-    Value(isize)
-    Label(String, isize)
-
-*/
