@@ -28,6 +28,7 @@ enum Phase2Token {
     Relative(isize),
     VariableIndexed(String),
     Or(usize),
+    OrRelative(isize),
     OrLabel(String, isize),
 }
 
@@ -142,15 +143,39 @@ fn compile(literal: &str, position: &Position) -> Result<Vec<CompilationToken>, 
                     let sign = *sign;
                     output.pop();
                     match output.last() {
-                        Some(CompilationToken::Phase1Token(Phase1Token::Relative)) => {
+                        Some(CompilationToken::Phase2Token(Phase2Token::OrRelative(added))) => {
+                            let added = *added;
                             output.pop();
-                            output.push(CompilationToken::Phase2Token(Phase2Token::Relative(
+                            output.push(CompilationToken::Phase2Token(Phase2Token::OrRelative(
                                 if sign {
-                                    -(number as isize)
+                                    added - (number as isize)
                                 } else {
-                                    number as isize
+                                    added + number as isize
                                 },
                             )));
+                        }
+                        Some(CompilationToken::Phase1Token(Phase1Token::Relative)) => {
+                            output.pop();
+                            if let Some(CompilationToken::Phase1Token(Phase1Token::QuestionMark)) =
+                                output.last()
+                            {
+                                output.pop();
+                                output.push(CompilationToken::Phase2Token(
+                                    Phase2Token::OrRelative(if sign {
+                                        -(number as isize)
+                                    } else {
+                                        number as isize
+                                    }),
+                                ));
+                            } else {
+                                output.push(CompilationToken::Phase2Token(Phase2Token::Relative(
+                                    if sign {
+                                        -(number as isize)
+                                    } else {
+                                        number as isize
+                                    },
+                                )));
+                            }
                         }
                         Some(CompilationToken::Phase2Token(Phase2Token::Label(_, _))) => {
                             let (label, added) = if let CompilationToken::Phase2Token(
@@ -313,7 +338,7 @@ impl Expression {
                     if let CompilationToken::Phase2Token(a) = e {
                         Some(Ok(a))
                     } else {
-                        println!("Zone7");
+                        println!("Zone7 {:?}", e);
                         Some(Err(Errors::ExpressionCompilingError {
                             position: position.clone(),
                             expression: string.to_owned(),
@@ -398,6 +423,14 @@ impl Instruction {
                                 or: Some(DefaultValue::Label(label.to_owned(), *added)),
                             }),
                         ),
+                        Phase2Token::OrRelative(added) => Self::Variable(
+                            variable.to_owned(),
+                            Some(Range {
+                                start: 0,
+                                end: Some(1),
+                                or: Some(DefaultValue::Relative(*added)),
+                            }),
+                        ),
                         _ => {
                             println!("Zone8");
                             return Err(Errors::ExpressionCompilingError {
@@ -445,6 +478,14 @@ impl Instruction {
                                             or: Some(DefaultValue::Label(label.to_owned(), *added)),
                                         }),
                                     ),
+                                    Phase2Token::OrRelative(added) => Self::Variable(
+                                        variable.to_owned(),
+                                        Some(Range {
+                                            start: *start as usize,
+                                            end: end.map(|x| x as usize),
+                                            or: Some(DefaultValue::Relative(*added)),
+                                        }),
+                                    ),
                                     _ => {
                                         println!("Zone10");
                                         return Err(Errors::ExpressionCompilingError {
@@ -481,6 +522,14 @@ impl Instruction {
                                             start: *start as usize,
                                             end: Some((start + 1) as usize),
                                             or: Some(DefaultValue::Label(label.to_owned(), *added)),
+                                        }),
+                                    ),
+                                    Phase2Token::OrRelative(added) => Self::Variable(
+                                        variable.to_owned(),
+                                        Some(Range {
+                                            start: *start as usize,
+                                            end: Some((start + 1) as usize),
+                                            or: Some(DefaultValue::Relative(*added)),
                                         }),
                                     ),
                                     _ => {
@@ -542,7 +591,7 @@ impl Expression {
                 };
                 match range {
                     Some(e) => {
-                        let mut variable: Vec<Value> = e.generate(variable);
+                        let mut variable: Vec<Value> = e.generate(variable, &self.position);
                         if !variable.is_empty() {
                             variable[0].add_labels(self.labels);
                         }
@@ -567,8 +616,28 @@ struct Range {
 }
 
 impl Range {
-    fn generate(&self, variable: &[Value]) -> Vec<Value> {
-        if let Some(end) = self.end {
+    fn generate(&self, variable: &[Value], position: &Position) -> Vec<Value> {
+        if let Some(or) = &self.or {
+            if let Some(end) = self.end {
+                assert_eq!(
+                    self.start < end,
+                    true,
+                    "In a range x..y x must be lower than y"
+                );
+                let mut list: Vec<Value> = variable
+                    .iter()
+                    .skip(self.start)
+                    .take(end - self.start)
+                    .cloned()
+                    .collect();
+                for _ in list.len()..(end - self.start) {
+                    list.push(or.clone().to_value(position.clone()));
+                }
+                list
+            } else {
+                variable.iter().skip(self.start).cloned().collect()
+            }
+        } else if let Some(end) = self.end {
             assert_eq!(
                 self.start < end,
                 true,
@@ -590,13 +659,26 @@ impl Range {
 enum DefaultValue {
     Value(usize),
     Label(String, isize),
+    Relative(isize),
+}
+
+impl DefaultValue {
+    fn to_value(&self, position: Position) -> Value {
+        match self {
+            Self::Value(value) => Value::Absolute(HashSet::new(), *value, position),
+            Self::Label(label, added) => {
+                Value::Label(HashSet::new(), label.to_owned(), *added, position)
+            }
+            Self::Relative(value) => Value::Relative(HashSet::new(), *value, position),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
 pub enum Value {
     Relative(HashSet<String>, isize, Position),
     Absolute(HashSet<String>, usize, Position),
-    Label(HashSet<String>, String, isize, Position),
+    Label(HashSet<String>, String, isize, Position), // bool: IsLocal
 }
 
 use std::collections::{HashMap, HashSet};

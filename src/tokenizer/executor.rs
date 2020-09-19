@@ -107,11 +107,24 @@ impl Context {
 fn rename_labels(code: Vec<Value>, current_int: &mut u64) -> Vec<Value> {
     let mut labels: HashMap<String, String> = HashMap::new();
 
+    let function_defined_label: HashSet<String> = code
+        .iter()
+        .map(|mut x| match &mut x {
+            Value::Label(lbls, _, _, _)
+            | Value::Absolute(lbls, _, _)
+            | Value::Relative(lbls, _, _) => lbls,
+        })
+        .flatten()
+        .cloned()
+        .collect::<HashSet<String>>();
+
     code.into_iter()
         .map(|mut x| {
             match &mut x {
                 Value::Label(lbls, label, _, _) => {
-                    try_rename_string(label, current_int, &mut labels);
+                    if function_defined_label.contains(label) {
+                        try_rename_string(label, current_int, &mut labels);
+                    }
                     *lbls = remap_labels(&lbls, current_int, &mut labels);
                 }
                 Value::Absolute(lbls, _, _) => {
