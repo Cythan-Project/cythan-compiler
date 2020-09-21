@@ -114,6 +114,7 @@ pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Stage3Token>, Errors> {
                     ));
                     was_litteral = false;
                 }
+                literal_caret = Some(position);
                 was_assignement = true;
                 litteral = e.clone().into_owned();
             }

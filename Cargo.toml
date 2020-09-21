@@ -8,3 +8,14 @@ edition = "2018"
 
 [dependencies]
 tokesies = {git = "https://github.com/Jeffail/tokesies"}
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "values"
+harness = false
+
+[[bench]]
+name = "generic-compile"
+harness = false

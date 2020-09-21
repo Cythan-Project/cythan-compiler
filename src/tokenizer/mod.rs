@@ -1,10 +1,10 @@
 pub mod errors;
 pub mod executor;
 pub mod quick_fix;
-mod stage1;
+pub mod stage1;
 mod stage2;
 mod stage3;
-mod value;
+pub mod value;
 
 use errors::Errors;
 
