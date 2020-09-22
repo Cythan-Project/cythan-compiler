@@ -1,6 +1,6 @@
+use crate::compiler::position::Position;
 use std::borrow::Cow;
 use tokesies::*;
-use crate::compiler::position::Position;
 
 pub struct CythanV1;
 

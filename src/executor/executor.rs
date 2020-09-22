@@ -1,4 +1,3 @@
-
 use std::collections::HashMap;
 
 type CompilerResult = Result<Vec<Value>, Errors>;
@@ -154,10 +153,10 @@ fn try_rename_string(
     }
 }
 
-use std::collections::HashSet;
-use crate::compiler::value::Value;
 use crate::compiler::errors::Errors;
+use crate::compiler::value::Value;
 use crate::parser::instruction::Instruction;
+use std::collections::HashSet;
 
 fn remap_labels(
     set: &HashSet<String>,

@@ -1,7 +1,7 @@
-use tokesies::{FilteredTokenizer, Token, filters};
-use crate::compiler::position::Position;
-use crate::parser::tokens::{CompilationToken, Phase2Token, Phase1Token};
 use crate::compiler::errors::Errors;
+use crate::compiler::position::Position;
+use crate::parser::tokens::{CompilationToken, Phase1Token, Phase2Token};
+use tokesies::{filters, FilteredTokenizer, Token};
 
 pub struct LiteralCompiler;
 
@@ -24,7 +24,7 @@ pub fn compile(literal: &str, position: &Position) -> Result<Vec<CompilationToke
                 Some(CompilationToken::Phase1Token(Phase1Token::Dot)) => {
                     output.pop();
                     if let Some(CompilationToken::Phase2Token(Phase2Token::Number(number))) =
-                    output.last()
+                        output.last()
                     {
                         let number = *number;
                         output.pop();
@@ -43,7 +43,7 @@ pub fn compile(literal: &str, position: &Position) -> Result<Vec<CompilationToke
                 }
                 Some(CompilationToken::Phase2Token(Phase2Token::Variable(_))) => {
                     let n = if let CompilationToken::Phase2Token(Phase2Token::Variable(n)) =
-                    output.pop().unwrap()
+                        output.pop().unwrap()
                     {
                         n
                     } else {
@@ -68,7 +68,7 @@ pub fn compile(literal: &str, position: &Position) -> Result<Vec<CompilationToke
                 Some(CompilationToken::Phase2Token(Phase2Token::Label(_, _))) => {
                     let (label, _added) =
                         if let CompilationToken::Phase2Token(Phase2Token::Label(label, added)) =
-                        output.pop().unwrap()
+                            output.pop().unwrap()
                         {
                             (label, added)
                         } else {
@@ -133,7 +133,7 @@ pub fn compile(literal: &str, position: &Position) -> Result<Vec<CompilationToke
                         Some(CompilationToken::Phase1Token(Phase1Token::Relative)) => {
                             output.pop();
                             if let Some(CompilationToken::Phase1Token(Phase1Token::QuestionMark)) =
-                            output.last()
+                                output.last()
                             {
                                 output.pop();
                                 output.push(CompilationToken::Phase2Token(

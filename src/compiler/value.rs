@@ -1,4 +1,3 @@
-
 #[derive(Clone, Debug)]
 pub enum Value {
     Relative(HashSet<String>, isize, Position),
@@ -6,9 +5,9 @@ pub enum Value {
     Label(HashSet<String>, String, isize, Position), // bool: IsLocal
 }
 
-use std::collections::{HashMap, HashSet};
-use crate::compiler::position::Position;
 use crate::compiler::errors::Errors;
+use crate::compiler::position::Position;
+use std::collections::{HashMap, HashSet};
 
 impl Value {
     fn get_labels(&self) -> &HashSet<String> {

@@ -1,12 +1,12 @@
-use crate::compiler::position::Position;
-use crate::expression::expression_compiler::compile;
-use crate::parser::tokens::{CompilationToken, Phase2Token};
 use crate::compiler::errors::Errors;
-use std::collections::HashMap;
-use crate::parser::instruction::Instruction;
-use std::collections::HashSet;
-use crate::expression::literal_instruction::LiteralInstruction;
+use crate::compiler::position::Position;
 use crate::compiler::value::Value;
+use crate::expression::expression_compiler::compile;
+use crate::expression::literal_instruction::LiteralInstruction;
+use crate::parser::instruction::Instruction;
+use crate::parser::tokens::{CompilationToken, Phase2Token};
+use std::collections::HashMap;
+use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
 pub struct LiteralExpression {
@@ -72,7 +72,9 @@ impl LiteralExpression {
             LiteralInstruction::Relative(added) => {
                 vec![Value::Relative(self.labels, added, self.position)]
             }
-            LiteralInstruction::Value(value) => vec![Value::Absolute(self.labels, value, self.position)],
+            LiteralInstruction::Value(value) => {
+                vec![Value::Absolute(self.labels, value, self.position)]
+            }
             LiteralInstruction::Variable(name, range) => {
                 let variable = if let Some(e) = vars.get(&name) {
                     e

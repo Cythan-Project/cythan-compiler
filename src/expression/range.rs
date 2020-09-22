@@ -1,6 +1,6 @@
-use crate::expression::defaultvalue::DefaultValue;
 use crate::compiler::position::Position;
 use crate::compiler::value::Value;
+use crate::expression::defaultvalue::DefaultValue;
 
 #[derive(Debug, Clone)]
 pub struct Range {
@@ -10,7 +10,6 @@ pub struct Range {
 }
 
 impl Range {
-
     pub fn generate(&self, variable: &[Value], position: &Position) -> Vec<Value> {
         if let Some(or) = &self.or {
             if let Some(end) = self.end {

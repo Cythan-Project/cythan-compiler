@@ -5,36 +5,25 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="71d15c78-a49f-4cd6-9ad6-7a8062a360d1" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/compiler/mod.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/compiler/position.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/compiler/value.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/executor/executor.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/executor/mod.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/expression/defaultvalue.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/expression/expression.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/expression/expression_compiler.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/expression/literal_instruction.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/expression/mod.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/expression/range.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/parser/basetoken.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/parser/instruction.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/parser/mod.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/parser/stage2token.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/parser/tokens.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/benches/generic-compile.rs" beforeDir="false" afterPath="$PROJECT_DIR$/benches/generic-compile.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/benches/values.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cythan-in/cythan.ct" beforeDir="false" afterPath="$PROJECT_DIR$/cythan-in/cythan.ct" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/compiler/errors.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/compiler/errors.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/compiler/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/compiler/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/compiler/position.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/compiler/position.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/compiler/value.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/compiler/value.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/executor/executor.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/executor/executor.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/executor/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/executor/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/expression/defaultvalue.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/expression/defaultvalue.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/expression/expression.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/expression/expression.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/expression/expression_compiler.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/expression/expression_compiler.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/expression/literal_instruction.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/expression/literal_instruction.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/expression/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/expression/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/expression/range.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/expression/range.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tokenizer/errors.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/compiler/errors.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tokenizer/executor.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tokenizer/mod.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tokenizer/quick_fix.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/compiler/quick_fix.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tokenizer/stage1.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tokenizer/stage2.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tokenizer/stage3.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tokenizer/value.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parser/basetoken.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/basetoken.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parser/instruction.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/instruction.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parser/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parser/stage2token.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/stage2token.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parser/tokens.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/tokens.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -108,22 +97,22 @@
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
     <state x="690" y="286" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/-1920.0.1920.1080/0.0.1920.1080@0.0.1920.1080" timestamp="1600799138134" />
-    <state width="1877" height="295" key="GridCell.Tab.0.bottom" timestamp="1600800236092">
+    <state width="1877" height="295" key="GridCell.Tab.0.bottom" timestamp="1600805074281">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="295" key="GridCell.Tab.0.bottom/-1920.0.1920.1080/0.0.1920.1080@0.0.1920.1080" timestamp="1600800236092" />
-    <state width="1877" height="295" key="GridCell.Tab.0.center" timestamp="1600800236092">
+    <state width="1877" height="295" key="GridCell.Tab.0.bottom/-1920.0.1920.1080/0.0.1920.1080@0.0.1920.1080" timestamp="1600805074281" />
+    <state width="1877" height="295" key="GridCell.Tab.0.center" timestamp="1600805074281">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="295" key="GridCell.Tab.0.center/-1920.0.1920.1080/0.0.1920.1080@0.0.1920.1080" timestamp="1600800236092" />
-    <state width="1877" height="295" key="GridCell.Tab.0.left" timestamp="1600800236092">
+    <state width="1877" height="295" key="GridCell.Tab.0.center/-1920.0.1920.1080/0.0.1920.1080@0.0.1920.1080" timestamp="1600805074281" />
+    <state width="1877" height="295" key="GridCell.Tab.0.left" timestamp="1600805074281">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="295" key="GridCell.Tab.0.left/-1920.0.1920.1080/0.0.1920.1080@0.0.1920.1080" timestamp="1600800236092" />
-    <state width="1877" height="295" key="GridCell.Tab.0.right" timestamp="1600800236092">
+    <state width="1877" height="295" key="GridCell.Tab.0.left/-1920.0.1920.1080/0.0.1920.1080@0.0.1920.1080" timestamp="1600805074281" />
+    <state width="1877" height="295" key="GridCell.Tab.0.right" timestamp="1600805074281">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="295" key="GridCell.Tab.0.right/-1920.0.1920.1080/0.0.1920.1080@0.0.1920.1080" timestamp="1600800236092" />
+    <state width="1877" height="295" key="GridCell.Tab.0.right/-1920.0.1920.1080/0.0.1920.1080@0.0.1920.1080" timestamp="1600805074281" />
     <state x="667" y="139" width="585" height="801" key="find.popup" timestamp="1600794574214">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>

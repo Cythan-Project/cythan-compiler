@@ -1,4 +1,3 @@
-
 use super::quick_fix::*;
 
 pub enum Errors {
@@ -94,7 +93,7 @@ impl Errors {
                 expression,
                 position,
             } => {
-                out.push_str(&position.to_str());
+                out.push_str(&position.to_string());
                 out.push_str("\r\n");
                 out.push_str(&format!("Can't compile expression: `{}`", expression));
             }
@@ -103,7 +102,7 @@ impl Errors {
                 function_names: _function_names,
                 function_name,
             } => {
-                out.push_str(&position.to_str());
+                out.push_str(&position.to_string());
                 out.push_str("\r\n");
                 out.push_str(&format!("Function `{}` was not found. \r\n", function_name));
                 out.push_str(" - Verify that the function is created before used.\r\n");
@@ -118,7 +117,7 @@ impl Errors {
                 variable_names: _,
                 variable_name,
             } => {
-                out.push_str(&position.to_str());
+                out.push_str(&position.to_string());
                 out.push_str("\r\n");
                 out.push_str(&format!("Variable `{}` was not found. \r\n", variable_name));
                 out.push_str("Try to init your variable with a value:\r\n");
@@ -135,7 +134,7 @@ impl Errors {
                 label_names: _,
                 label_name,
             } => {
-                out.push_str(&position.to_str());
+                out.push_str(&position.to_string());
                 out.push_str("\r\n");
                 out.push_str(&format!("Label `'{}` was not found. \r\n", label_name));
                 out.push_str("Try to init your label at an index:\r\n");
@@ -149,21 +148,21 @@ impl Errors {
                 out.push_str(&format!("  Use: `'#{}` instead", label_name));
             }
             Errors::EmptyVariable { position, varname } => {
-                out.push_str(&position.to_str());
+                out.push_str(&position.to_string());
                 out.push_str("\r\n");
                 out.push_str(&format!("Variable `{}` is empty \r\n", varname));
                 out.push_str("Try to init your variable with a value:\r\n");
                 out.push_str(&format!(" {} = (<value>)", varname));
             }
             Errors::UndefinedVariable { position, varname } => {
-                out.push_str(&position.to_str());
+                out.push_str(&position.to_string());
                 out.push_str("\r\n");
                 out.push_str(&format!("Variable `{}` is undefined \r\n", varname));
                 out.push_str("Try to init your variable with a value:\r\n");
                 out.push_str(&format!(" {} = (<value>)", varname));
             }
             Errors::UnableToReadLitteral { position, litteral } => {
-                out.push_str(&position.to_str());
+                out.push_str(&position.to_string());
                 out.push_str("\r\n");
                 out.push_str(&format!("Can't compile litteral {} \r\n", litteral));
                 out.push_str("Is your synthax correct ?\r\n");
@@ -178,7 +177,7 @@ impl Errors {
                 position,
                 expression,
             } => {
-                out.push_str(&position.to_str());
+                out.push_str(&position.to_string());
                 out.push_str("\r\n");
                 out.push_str(&format!("Can't compute expression {} \r\n", expression));
                 out.push_str("You need to add a number before the `?`\r\n");
@@ -193,7 +192,7 @@ impl Errors {
                 position,
                 expression,
             } => {
-                out.push_str(&position.to_str());
+                out.push_str(&position.to_string());
                 out.push_str("\r\n");
                 out.push_str(&format!("Can't compute expression {} \r\n", expression));
                 out.push_str("You need to have a number after `self.`\r\n");
@@ -209,7 +208,7 @@ impl Errors {
                 position,
                 expression,
             } => {
-                out.push_str(&position.to_str());
+                out.push_str(&position.to_string());
                 out.push_str("\r\n");
                 out.push_str(&format!("Can't compute expression {} \r\n", expression));
                 out.push_str("In a `self.x..y`, y must be a number\r\n");
@@ -225,7 +224,7 @@ impl Errors {
                 position,
                 expression,
             } => {
-                out.push_str(&position.to_str());
+                out.push_str(&position.to_string());
                 out.push_str("\r\n");
                 out.push_str(&format!("Can't compute expression {} \r\n", expression));
                 out.push_str("In a `self.x..y`, x must be a number\r\n");
@@ -238,7 +237,7 @@ impl Errors {
                 out.push_str(" self.15..?");
             }
             Errors::EqualNotPrecededByLitteral { position } => {
-                out.push_str(&position.to_str());
+                out.push_str(&position.to_string());
                 out.push_str("\r\n");
                 out.push_str("a `=` must be followed by a litteral\r\n");
                 out.push_str("Example:\r\n");
@@ -250,7 +249,7 @@ impl Errors {
                 assignement,
                 position,
             } => {
-                out.push_str(&position.to_str());
+                out.push_str(&position.to_string());
                 out.push_str("\r\n");
                 out.push_str("Can't place a literal after an assignement\r\n");
                 out.push_str("Have you forgotten parenthesis ?\r\n");
@@ -264,7 +263,7 @@ impl Errors {
                 assignement,
                 position,
             } => {
-                out.push_str(&position.to_str());
+                out.push_str(&position.to_string());
                 out.push_str("\r\n");
                 out.push_str("Can't place a block after an assignement\r\n");
                 out.push_str(&format!(" > {} = {{\r\n", &assignement));
@@ -275,7 +274,7 @@ impl Errors {
                 out.push_str(" 0 5 6 self\r\n}");
             }
             Errors::BlockMustBePrecededByLiteral { position } => {
-                out.push_str(&position.to_str());
+                out.push_str(&position.to_string());
                 out.push_str("\r\n");
                 out.push_str("A block must have a name\r\n");
                 out.push_str("Please add a name to the block\r\n");
@@ -284,7 +283,7 @@ impl Errors {
                 out.push_str(" 0 5 6 self\r\n}");
             }
             Errors::ParenthesisNotInAssignementOrFunctionCall { position } => {
-                out.push_str(&position.to_str());
+                out.push_str(&position.to_string());
                 out.push_str("\r\n");
                 out.push_str("A code function call must be preceded by a function name or add a = to make an assignement.\r\n");
                 out.push_str("Example:\r\n");
@@ -298,7 +297,7 @@ impl Errors {
                 assignement2,
                 position,
             } => {
-                out.push_str(&position.to_str());
+                out.push_str(&position.to_string());
                 out.push_str("\r\n");
                 out.push_str("Can't place a assignement after an assignement\r\n");
                 out.push_str(&format!(
@@ -386,9 +385,9 @@ pub fn get_similars(input: &str, discriminant: &[String]) -> Vec<String> {
         .collect()
 }
 
+use crate::compiler::position::Position;
 use std::cmp::min;
 use std::collections::HashMap;
-use crate::compiler::position::Position;
 
 pub fn generic_damerau_levenshtein(a_elems: &str, b_elems: &str) -> usize {
     let a_len = a_elems.len();

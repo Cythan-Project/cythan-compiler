@@ -1,3 +1,6 @@
+use std::cmp::Ordering;
+use std::ops::Add;
+
 #[derive(Debug, Clone)]
 pub struct Position {
     pub line_from: usize,
@@ -15,23 +18,30 @@ impl Position {
             caret_to: to,
         }
     }
-    pub fn to_str(&self) -> String {
+}
+
+impl std::fmt::Display for Position {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.line_from == self.line_to {
-            format!(
+            write!(
+                f,
                 "Error line {} [{},{}]",
                 self.line_to, self.caret_from, self.caret_to
             )
         } else {
-            format!(
+            write!(
+                f,
                 "Error from line {} [{}] to line {} [{}]",
                 self.line_from, self.caret_from, self.line_to, self.caret_to
             )
         }
     }
+}
 
-    pub fn merge(&self, position: &Position) -> Self {
-        use std::cmp::Ordering;
+impl Add for &Position {
+    type Output = Position;
 
+    fn add(self, position: &Position) -> Position {
         let (line_from, caret_from) = match self
             .line_from
             .partial_cmp(&position.line_from)
@@ -50,7 +60,7 @@ impl Position {
             Ordering::Greater => (self.line_to, self.caret_to),
             Ordering::Equal => (self.line_to, self.caret_to.max(position.caret_to)),
         };
-        Self {
+        Position {
             line_from,
             line_to,
             caret_from,

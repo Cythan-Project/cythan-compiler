@@ -1,9 +1,9 @@
-use crate::compiler::position::Position;
-use crate::parser::stage2token::Stage2Token;
 use crate::compiler::errors::Errors;
+use crate::compiler::position::Position;
 use crate::expression::expression::LiteralExpression;
+use crate::parser::stage2token::Stage2Token;
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum Instruction {
     Executable(Position, LiteralExpression),
     FunctionExecution(Position, String, Vec<Instruction>),
@@ -81,7 +81,7 @@ impl Instruction {
 
 fn compile_caret(caret: &Option<&Position>, merge: &Position) -> Position {
     if let Some(e) = caret {
-        e.merge(merge)
+        *e + merge
     } else {
         merge.clone()
     }
@@ -105,7 +105,7 @@ pub fn compile(expr: &[Stage2Token]) -> Result<Vec<Instruction>, Errors> {
                 }
                 if was_assignement {
                     return Err(Errors::LiteralAfterAssignement {
-                        position: literal_caret.expect("A").merge(position),
+                        position: literal_caret.expect("A") + position,
                         literal: e.clone().into_owned(),
                         assignement: litteral,
                     });

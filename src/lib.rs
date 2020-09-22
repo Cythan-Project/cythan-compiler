@@ -1,9 +1,9 @@
 use crate::compiler::errors::Errors;
-use crate::parser::{stage2token, instruction, basetoken};
 use crate::executor::executor::Executor;
+use crate::parser::{basetoken, instruction, stage2token};
 
-mod expression;
 mod compiler;
+mod expression;
 mod parser;
 
 mod executor;

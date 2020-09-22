@@ -1,8 +1,8 @@
+use crate::compiler::errors::Errors;
 use crate::compiler::position::Position;
+use crate::expression::defaultvalue::DefaultValue;
 use crate::expression::range::Range;
 use crate::parser::tokens::Phase2Token;
-use crate::expression::defaultvalue::DefaultValue;
-use crate::compiler::errors::Errors;
 
 #[derive(Debug, Clone)]
 pub enum LiteralInstruction {
@@ -11,7 +11,6 @@ pub enum LiteralInstruction {
     Value(usize),
     Relative(isize),
 }
-
 
 impl LiteralInstruction {
     pub(crate) fn from_stage2(

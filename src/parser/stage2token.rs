@@ -1,7 +1,7 @@
-use std::borrow::Cow;
+use crate::compiler::errors::Errors;
 use crate::compiler::position::Position;
 use crate::parser::basetoken::BaseToken;
-use crate::compiler::errors::Errors;
+use std::borrow::Cow;
 
 #[derive(Debug, Clone)]
 pub enum Stage2Token<'a> {
@@ -42,7 +42,7 @@ pub fn compile<'a>(token: &[&BaseToken<'a>]) -> Result<Vec<Stage2Token<'a>>, Err
                     in_p -= 1;
                     if in_p == 0 {
                         v.push(Stage2Token::Parenthesis(
-                            caret.unwrap().merge(position),
+                            caret.unwrap() + position,
                             compile(&p)?,
                         ));
                         p = Vec::new();
@@ -86,10 +86,7 @@ pub fn compile<'a>(token: &[&BaseToken<'a>]) -> Result<Vec<Stage2Token<'a>>, Err
                 if in_p == 0 {
                     in_b -= 1;
                     if in_b == 0 {
-                        v.push(Stage2Token::Block(
-                            caret.unwrap().merge(position),
-                            compile(&p)?,
-                        ));
+                        v.push(Stage2Token::Block(caret.unwrap() + position, compile(&p)?));
                         p = Vec::new();
                     } else {
                         p.push(*i);
@@ -102,7 +99,7 @@ pub fn compile<'a>(token: &[&BaseToken<'a>]) -> Result<Vec<Stage2Token<'a>>, Err
                 if in_p == 0 && in_b == 0 {
                     let tmp = v.pop();
                     if let Some(Stage2Token::Literal(position1, e)) = tmp {
-                        v.push(Stage2Token::Assignement(position.merge(&position1), e));
+                        v.push(Stage2Token::Assignement(position + &position1, e));
                     } else {
                         return Err(Errors::EqualNotPrecededByLitteral {
                             position: position.clone(),
