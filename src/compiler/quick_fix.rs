@@ -1,4 +1,4 @@
-use super::stage1::Position;
+use crate::compiler::position::Position;
 
 #[derive(Clone, Debug)]
 pub struct QuickFix {

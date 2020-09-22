@@ -1,18 +1,15 @@
-use super::stage3::Stage3Token;
+
 use std::collections::HashMap;
-
-use super::errors::Errors;
-
-use super::value::Value;
 
 type CompilerResult = Result<Vec<Value>, Errors>;
 
-pub struct Context {
-    functions: HashMap<String, Vec<Stage3Token>>,
+#[derive(Debug)]
+pub struct Executor {
+    functions: HashMap<String, Vec<Instruction>>,
     variables: HashMap<String, Vec<Value>>,
 }
 
-impl Default for Context {
+impl Default for Executor {
     fn default() -> Self {
         Self {
             functions: HashMap::new(),
@@ -21,19 +18,19 @@ impl Default for Context {
     }
 }
 
-impl Context {
+impl Executor {
     pub fn execute(
         &mut self,
-        token: &Stage3Token,
+        token: &Instruction,
         function_data: &[Value],
         current_int: &mut u64,
     ) -> CompilerResult {
         match token {
-            Stage3Token::FunctionCreation(_position, name, code) => {
+            Instruction::FunctionCreation(_position, name, code) => {
                 self.functions.insert(name.to_owned(), code.clone());
                 Ok(Vec::new())
             }
-            Stage3Token::FunctionExecution(position, name, args) => {
+            Instruction::FunctionExecution(position, name, args) => {
                 let (fnname, label) = if name.starts_with('\'') && name.contains(':') {
                     let mut iter = name.split(':');
                     let label = iter.next().unwrap();
@@ -67,7 +64,7 @@ impl Context {
                 }
                 Ok(out)
             }
-            Stage3Token::VariableDefinition(_position, name, value) => {
+            Instruction::VariableDefinition(_position, name, value) => {
                 let result = value
                     .iter()
                     .map(|x| self.execute(x, function_data, current_int))
@@ -76,13 +73,13 @@ impl Context {
                     .insert(name.to_owned(), result.into_iter().flatten().collect());
                 Ok(vec![])
             }
-            Stage3Token::Executable(_position, name) => {
+            Instruction::Executable(_position, name) => {
                 name.clone().execute(&self.variables, function_data)
             }
         }
     }
 
-    pub fn compute(&mut self, tokens: &[Stage3Token]) -> Result<Vec<usize>, Errors> {
+    pub fn compute(&mut self, tokens: &[Instruction]) -> Result<Vec<usize>, Errors> {
         let p = &Vec::new();
         let mut integer = 0u64;
         let mut labels = HashMap::new();
@@ -158,6 +155,9 @@ fn try_rename_string(
 }
 
 use std::collections::HashSet;
+use crate::compiler::value::Value;
+use crate::compiler::errors::Errors;
+use crate::parser::instruction::Instruction;
 
 fn remap_labels(
     set: &HashSet<String>,
@@ -182,9 +182,9 @@ fn remap_labels(
 }
 
 fn execute_function(
-    function_code: &[Stage3Token],
-    arguments: &[Stage3Token],
-    context: &mut Context,
+    function_code: &[Instruction],
+    arguments: &[Instruction],
+    context: &mut Executor,
     function_data: &[Value],
     integer: &mut u64,
 ) -> CompilerResult {

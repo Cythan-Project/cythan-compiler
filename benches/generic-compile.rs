@@ -1,6 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use cythan_compiler::tokenizer::errors::Errors;
 use cythan_compiler::*;
 
 fn criterion_benchmark(c: &mut Criterion) {

@@ -1,4 +1,3 @@
-use super::stage1::Position;
 
 use super::quick_fix::*;
 
@@ -389,6 +388,7 @@ pub fn get_similars(input: &str, discriminant: &[String]) -> Vec<String> {
 
 use std::cmp::min;
 use std::collections::HashMap;
+use crate::compiler::position::Position;
 
 pub fn generic_damerau_levenshtein(a_elems: &str, b_elems: &str) -> usize {
     let a_len = a_elems.len();

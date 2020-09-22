@@ -1,8 +1,14 @@
-pub mod tokenizer;
+use crate::compiler::errors::Errors;
+use crate::parser::{stage2token, instruction, basetoken};
+use crate::executor::executor::Executor;
 
-pub use tokenizer::*;
+mod expression;
+mod compiler;
+mod parser;
 
-pub use tokenizer::errors::Errors;
+mod executor;
+
+pub use crate::compiler::errors::*;
 
 #[test]
 fn run() {
@@ -19,5 +25,31 @@ fn run() {
 }
 
 pub fn compile(input: &str) -> Result<Vec<usize>, Errors> {
-    Context::default().compute(&tokenizer::generate_tokens(&input)?)
+    Executor::default().compute(&generate_tokens(&input)?)
+}
+
+pub fn generate_tokens(string: &str) -> Result<Vec<instruction::Instruction>, Errors> {
+    Ok(instruction::compile(&stage2token::compile(
+        &string
+            .lines()
+            .enumerate()
+            .map(|(i, x)| basetoken::compile(x, i + 1))
+            .flatten()
+            .collect::<Vec<basetoken::BaseToken>>()
+            .iter()
+            .collect::<Vec<_>>(),
+    )?)?)
+}
+
+pub fn generate_tokens_stage2(string: &str) -> Result<Vec<stage2token::Stage2Token>, Errors> {
+    stage2token::compile(
+        &string
+            .lines()
+            .enumerate()
+            .map(|(i, x)| basetoken::compile(x, i + 1))
+            .flatten()
+            .collect::<Vec<basetoken::BaseToken>>()
+            .iter()
+            .collect::<Vec<_>>(),
+    )
 }

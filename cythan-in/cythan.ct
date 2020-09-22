@@ -1,5 +1,3 @@
-a = a
-
 'start
 0 0 0 0 0 0 0 0 0 # you can test number from 0 to 9
 # Default pointors
@@ -126,7 +124,7 @@ add_4b {
     'inputA4 'inputA3
     
     # test 'actA == 2 (end)
-    switch ('actA 2 'end 1 '_ok)
+    switch ('actA _2 'end _1 '_ok)
     '_ok:no_op
     
     'inputB0 'actB
@@ -140,15 +138,15 @@ add_4b {
     'output3 'output2
     
     # --- add ---
-    switch ('retenue 1 'r1 0 'r0)
+    switch ('retenue _1 'r1 _0 'r0)
     
-    'r1:switch('actA 1 'r1a1 0 'r1a0)
-    'r0:switch('actA 1 'r0a1 0 'r0a0)
+    'r1:switch('actA _1 'r1a1 _0 'r1a0)
+    'r0:switch('actA _1 'r0a1 _0 'r0a0)
     
-    'r1a1:switch ('actB 1 'result_11 0 'result_10)
-    'r1a0:switch ('actB 1 'result_10 0 'result_01)
-    'r0a1:switch ('actB 1 'result_10 0 'result_01)
-    'r0a0:switch ('actB 1 'result_01 0 'result_00)
+    'r1a1:switch ('actB _1 'result_11 _0 'result_10)
+    'r1a0:switch ('actB _1 'result_10 _0 'result_01)
+    'r0a1:switch ('actB _1 'result_10 _0 'result_01)
+    'r0a0:switch ('actB _1 'result_01 _0 'result_00)
     
     'result_00:jump('start_loop)
     'result_01:'actOut ~+2 _1 earasable jump('start_loop)

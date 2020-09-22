@@ -1,6 +1,7 @@
 use std::borrow::Cow;
-
-use super::stage1::Position;
+use crate::compiler::position::Position;
+use crate::parser::basetoken::BaseToken;
+use crate::compiler::errors::Errors;
 
 #[derive(Debug, Clone)]
 pub enum Stage2Token<'a> {
@@ -11,12 +12,8 @@ pub enum Stage2Token<'a> {
     Assignement(Position, Cow<'a, str>),
 }
 
-use super::errors::Errors;
-
-use super::stage1::Stage1Token;
-
 #[inline]
-pub fn compile<'a>(token: &[&Stage1Token<'a>]) -> Result<Vec<Stage2Token<'a>>, Errors> {
+pub fn compile<'a>(token: &[&BaseToken<'a>]) -> Result<Vec<Stage2Token<'a>>, Errors> {
     let mut v = Vec::new();
 
     let mut in_p = 0;
@@ -28,7 +25,7 @@ pub fn compile<'a>(token: &[&Stage1Token<'a>]) -> Result<Vec<Stage2Token<'a>>, E
 
     for i in token {
         match i {
-            Stage1Token::OpenParenthesis(position) => {
+            BaseToken::OpenParenthesis(position) => {
                 if in_b == 0 {
                     in_p += 1;
                     if in_p != 1 {
@@ -40,7 +37,7 @@ pub fn compile<'a>(token: &[&Stage1Token<'a>]) -> Result<Vec<Stage2Token<'a>>, E
                     p.push(*i);
                 }
             }
-            Stage1Token::CloseParenthesis(position) => {
+            BaseToken::CloseParenthesis(position) => {
                 if in_b == 0 {
                     in_p -= 1;
                     if in_p == 0 {
@@ -56,7 +53,7 @@ pub fn compile<'a>(token: &[&Stage1Token<'a>]) -> Result<Vec<Stage2Token<'a>>, E
                     p.push(*i);
                 }
             }
-            Stage1Token::Literal(position, e) => {
+            BaseToken::Literal(position, e) => {
                 if e.trim().is_empty() {
                     continue;
                 }
@@ -66,14 +63,14 @@ pub fn compile<'a>(token: &[&Stage1Token<'a>]) -> Result<Vec<Stage2Token<'a>>, E
                     p.push(*i);
                 }
             }
-            /*Stage1Token::KeywordFn => {
+            /*BaseToken::KeywordFn => {
                 if in_p == 0 && in_b == 0 {
                     v.push(Stage2Token::KeywordFn);
                 } else {
                     p.push(*i);
                 }
             }*/
-            Stage1Token::OpenBrackets(position) => {
+            BaseToken::OpenBrackets(position) => {
                 if in_p == 0 {
                     in_b += 1;
                     if in_b != 1 {
@@ -85,7 +82,7 @@ pub fn compile<'a>(token: &[&Stage1Token<'a>]) -> Result<Vec<Stage2Token<'a>>, E
                     p.push(*i);
                 }
             }
-            Stage1Token::CloseBrackets(position) => {
+            BaseToken::CloseBrackets(position) => {
                 if in_p == 0 {
                     in_b -= 1;
                     if in_b == 0 {
@@ -101,7 +98,7 @@ pub fn compile<'a>(token: &[&Stage1Token<'a>]) -> Result<Vec<Stage2Token<'a>>, E
                     p.push(*i);
                 }
             }
-            Stage1Token::Equals(position) => {
+            BaseToken::Equals(position) => {
                 if in_p == 0 && in_b == 0 {
                     let tmp = v.pop();
                     if let Some(Stage2Token::Literal(position1, e)) = tmp {
