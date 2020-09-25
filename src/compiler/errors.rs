@@ -1,5 +1,6 @@
 use super::quick_fix::*;
 
+#[derive(PartialEq)]
 pub enum Errors {
     FunctionNotFound {
         function_name: String,

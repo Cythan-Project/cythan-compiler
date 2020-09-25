@@ -49,7 +49,7 @@ impl Value {
                     .skip(current_index)
                     .position(|x| x.does_define_label(a))
                 {
-                    (e as isize + i) as usize
+                    (e as isize + i) as usize + current_index
                 } else {
                     return Err(Errors::LabelNotFound {
                         label_name: a.to_owned(),
