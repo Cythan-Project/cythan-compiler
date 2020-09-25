@@ -9,6 +9,7 @@ mod parser;
 mod executor;
 
 pub use crate::compiler::errors::*;
+pub use crate::compiler::quick_fix::*;
 
 #[test]
 fn run() {
