@@ -109,7 +109,7 @@ impl Errors {
                 out.push_str(" - Verify that the function is created before used.\r\n");
                 out.push_str(" - Check for similar names.\r\n");
                 out.push_str(" - Create the function using:\r\n");
-                out.push_str(&format!(" fn {} {{\r\n", function_name));
+                out.push_str(&format!(" {} {{\r\n", function_name));
                 out.push_str("    <code>\r\n");
                 out.push_str(" }");
             }
